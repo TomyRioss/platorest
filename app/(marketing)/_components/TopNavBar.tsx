@@ -26,7 +26,7 @@ export default function TopNavBar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-text-secondary hover:text-primary"
+              className="border-b-2 border-transparent text-sm font-medium text-text-secondary hover:border-primary hover:text-primary"
             >
               {link.label}
             </Link>
@@ -36,7 +36,7 @@ export default function TopNavBar() {
         <div className="hidden items-center justify-end gap-3 md:flex">
           <Link
             href="/login"
-            className="text-sm font-semibold text-text-primary hover:text-primary"
+            className="border-b-2 border-primary text-sm font-semibold text-text-primary hover:text-primary"
           >
             Iniciar sesión
           </Link>
@@ -66,7 +66,7 @@ export default function TopNavBar() {
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="py-2 text-sm font-medium text-text-secondary hover:text-primary"
+              className="w-fit border-b-2 border-transparent py-2 text-sm font-medium text-text-secondary hover:border-primary hover:text-primary"
             >
               {link.label}
             </Link>
@@ -74,7 +74,7 @@ export default function TopNavBar() {
           <Link
             href="/login"
             onClick={() => setOpen(false)}
-            className="mt-2 py-2 text-center text-sm font-semibold text-text-primary hover:text-primary"
+            className="mt-2 self-center border-b-2 border-primary py-2 text-center text-sm font-semibold text-text-primary hover:text-primary"
           >
             Iniciar sesión
           </Link>
