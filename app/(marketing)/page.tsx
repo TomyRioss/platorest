@@ -41,7 +41,7 @@ const INCLUDED = [
 export default function LandingPage() {
   return (
     <main>
-      <header className="relative overflow-hidden bg-background pt-16 pb-20 md:pt-24 md:pb-28">
+      <header className="relative overflow-hidden bg-background pt-16 pb-20 md:pt-32 md:pb-40">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 md:grid-cols-2">
           <div>
             <Badge className="mb-4 bg-primary-light text-primary hover:bg-primary-light">
@@ -80,7 +80,7 @@ export default function LandingPage() {
                 <img
                   src="https://images.pexels.com/photos/2544829/pexels-photo-2544829.jpeg?auto=compress&cs=tinysrgb&w=1200"
                   alt="Chef trabajando en cocina de restaurante"
-                  className="aspect-video w-full object-cover"
+                  className="aspect-[4/3] w-full object-cover"
                   loading="eager"
                 />
               </CardContent>

@@ -16,7 +16,7 @@ export default function TopNavBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 items-center px-6 py-4 md:grid-cols-[1fr_auto_1fr]">
         <Link href="/" className="text-xl font-bold tracking-tight text-text-primary">
           PlatoRest
         </Link>
@@ -31,13 +31,16 @@ export default function TopNavBar() {
               {link.label}
             </Link>
           ))}
+        </nav>
+
+        <div className="hidden justify-end md:flex">
           <Link
             href="/login"
             className="rounded bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover"
           >
             Login to Dashboard
           </Link>
-        </nav>
+        </div>
 
         <button
           type="button"
