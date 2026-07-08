@@ -7,26 +7,34 @@ import LeadForm from "./_components/LeadForm";
 
 const FEATURES = [
   {
+    icon: "💳",
     title: "Smart POS",
     desc: "Ventas rápidas, cierres de caja automatizados y múltiples métodos de pago integrados en una interfaz intuitiva.",
+    image: "https://images.pexels.com/photos/12935074/pexels-photo-12935074.jpeg?auto=compress&cs=tinysrgb&w=800",
     span: "md:col-span-8",
     accent: false,
   },
   {
+    icon: "📦",
     title: "Inventario en tiempo real",
     desc: "Control de stock automático con alertas antes de que falte un insumo.",
+    image: "https://images.pexels.com/photos/4483773/pexels-photo-4483773.jpeg?auto=compress&cs=tinysrgb&w=800",
     span: "md:col-span-4",
     accent: false,
   },
   {
+    icon: "🍽️",
     title: "Mapa de mesas",
     desc: "Visualizá tu salón en tiempo real. Reservas y rotación con un click.",
+    image: "https://images.pexels.com/photos/776538/pexels-photo-776538.jpeg?auto=compress&cs=tinysrgb&w=800",
     span: "md:col-span-4",
     accent: false,
   },
   {
+    icon: "📱",
     title: "Menú digital QR",
     desc: "Actualizá precios y platos al instante. Tus clientes piden desde su celular sin esperas.",
+    image: "https://images.pexels.com/photos/12935064/pexels-photo-12935064.jpeg?auto=compress&cs=tinysrgb&w=800",
     span: "md:col-span-8",
     accent: true,
   },
@@ -120,13 +128,29 @@ export default function LandingPage() {
                   f.accent && "border-transparent bg-primary text-white"
                 )}
               >
-                <CardContent className="p-0">
-                  <h3 className={cn("text-xl font-semibold", f.accent ? "text-white" : "text-text-primary")}>
-                    {f.title}
-                  </h3>
-                  <p className={cn("mt-2 max-w-md text-sm", f.accent ? "text-white/90" : "text-text-secondary")}>
-                    {f.desc}
-                  </p>
+                <CardContent className="flex items-center gap-6 p-0">
+                  <div className="flex-1">
+                    <div
+                      className={cn(
+                        "mb-3 flex h-10 w-10 items-center justify-center rounded-full text-lg",
+                        f.accent ? "bg-white/20" : "bg-primary-light"
+                      )}
+                    >
+                      {f.icon}
+                    </div>
+                    <h3 className={cn("text-xl font-semibold", f.accent ? "text-white" : "text-text-primary")}>
+                      {f.title}
+                    </h3>
+                    <p className={cn("mt-2 max-w-md text-sm", f.accent ? "text-white/90" : "text-text-secondary")}>
+                      {f.desc}
+                    </p>
+                  </div>
+                  <img
+                    src={f.image}
+                    alt={f.title}
+                    className="hidden h-24 w-24 flex-shrink-0 rounded-lg object-cover sm:block"
+                    loading="lazy"
+                  />
                 </CardContent>
               </Card>
             ))}
