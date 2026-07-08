@@ -33,12 +33,18 @@ export default function TopNavBar() {
           ))}
         </nav>
 
-        <div className="hidden justify-end md:flex">
+        <div className="hidden items-center justify-end gap-3 md:flex">
           <Link
             href="/login"
+            className="text-sm font-semibold text-text-primary hover:text-primary"
+          >
+            Iniciar sesión
+          </Link>
+          <Link
+            href="/menu/demo"
             className="rounded bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-hover"
           >
-            Login to Dashboard
+            Demo Gratis
           </Link>
         </div>
 
@@ -68,9 +74,16 @@ export default function TopNavBar() {
           <Link
             href="/login"
             onClick={() => setOpen(false)}
-            className="mt-2 rounded bg-primary px-4 py-2 text-center text-sm font-semibold text-white hover:bg-primary-hover"
+            className="mt-2 py-2 text-center text-sm font-semibold text-text-primary hover:text-primary"
           >
-            Login to Dashboard
+            Iniciar sesión
+          </Link>
+          <Link
+            href="/menu/demo"
+            onClick={() => setOpen(false)}
+            className="rounded bg-primary px-4 py-2 text-center text-sm font-semibold text-white hover:bg-primary-hover"
+          >
+            Demo Gratis
           </Link>
         </nav>
       )}
