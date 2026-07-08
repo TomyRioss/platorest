@@ -184,19 +184,6 @@ body {
   );
 }
 
-.hero-comanda {
-  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hero-comanda:hover {
-  transform: translateY(-6px) rotate(0deg) !important;
-  z-index: 10 !important;
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero-comanda {
-    transition: none;
-  }
-}
-
 .hero-ticket-photo-offset {
   transform: translate(14px, 18px);
 }

@@ -41,29 +41,25 @@ const FEATURES = [
   },
 ];
 
-const COMANDAS = [
-  {
-    id: "128",
-    table: "Delivery · Av. Corrientes 1200",
-    items: ["1x Milanesa napolitana", "1x Papas fritas", "1x Coca-Cola 500ml"],
-    ready: false,
-    rotate: -6,
-  },
-  {
-    id: "092",
-    table: "Mesa 7 · 4 cubiertos",
-    items: ["2x Bife de chorizo", "2x Ensalada mixta", "1x Malbec copa"],
-    ready: false,
-    rotate: 3,
-  },
-  {
-    id: "071",
-    table: "Take away · Mostrador",
-    items: ["1x Pizza muzzarella", "1x Empanadas x6"],
-    ready: true,
-    rotate: -1,
-  },
+type TableState = "free" | "occupied" | "reserved";
+
+const FLOOR_TABLES: { id: number; seats: number; state: TableState }[] = [
+  { id: 1, seats: 2, state: "occupied" },
+  { id: 2, seats: 4, state: "free" },
+  { id: 3, seats: 4, state: "occupied" },
+  { id: 4, seats: 2, state: "reserved" },
+  { id: 5, seats: 6, state: "occupied" },
+  { id: 6, seats: 2, state: "free" },
+  { id: 7, seats: 4, state: "free" },
+  { id: 8, seats: 4, state: "occupied" },
+  { id: 9, seats: 2, state: "reserved" },
 ];
+
+const TABLE_STATE_STYLES: Record<TableState, string> = {
+  free: "border-2 border-border bg-background text-text-secondary",
+  occupied: "bg-primary text-white",
+  reserved: "border-2 border-dashed border-primary bg-primary-light text-primary",
+};
 
 const INCLUDED = [
   "Soporte 24/7 en español",
@@ -76,32 +72,27 @@ export default function LandingPage() {
     <main>
 
 
-      <header className="relative overflow-hidden bg-background pt-16 pb-24 md:pt-28 md:pb-32">
+      <header className="bg-background pt-20 pb-24 md:pt-28 md:pb-32">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 px-6 md:grid-cols-2">
           <div>
-            <span className="hero-ticket-stub inline-block bg-primary-light px-4 py-2 text-xs font-bold uppercase tracking-wide text-primary">
-              Sistema Todo-En-Uno para Gastronomía
-            </span>
-            <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-text-primary sm:text-5xl">
-              Tu restaurante entero, en una sola pantalla.
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-text-secondary">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
+              Salón en vivo, sin planillas
+            </div>
+            <h1 className="mt-5 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-text-primary sm:text-5xl">
+              Sabés qué pasa en cada mesa sin pararte de la caja.
             </h1>
             <p className="mt-6 max-w-lg text-pretty text-lg text-text-secondary">
-              PlatoRest une POS, inventario, mapa de mesas y menú digital QR
-              en un solo sistema. Dejá de saltar entre apps.
+              PlatoRest te muestra el salón completo en tiempo real: quién
+              está sentado, quién espera la cuenta y qué mesa se libera
+              primero.
             </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {["POS", "Inventario", "Mesas", "Menú QR"].map((tag) => (
-                <span key={tag} className="rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-text-secondary">
-                  {tag}
-                </span>
-              ))}
-            </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/menu/demo"
                 className={cn(buttonVariants({ size: "lg" }), "h-auto min-h-11 rounded-lg px-8 py-4 text-lg shadow-lg")}
               >
-                Iniciar prueba gratis
+                Demo gratis
               </Link>
               <Link
                 href="/login"
@@ -110,47 +101,52 @@ export default function LandingPage() {
                   "h-auto min-h-11 rounded-lg border-2 border-primary px-6 py-4 text-base text-primary hover:bg-primary-light hover:text-primary"
                 )}
               >
-                Ver demo en vivo
+                Iniciar sesión
               </Link>
             </div>
           </div>
 
-          <div className="relative flex h-[26rem] items-center justify-center sm:h-[30rem]">
-            {COMANDAS.map((c, i) => (
-              <div
-                key={c.id}
-                className="hero-comanda absolute w-64 rounded-sm bg-background p-5 shadow-2xl ring-1 ring-black/5"
-                style={{
-                  transform: `rotate(${c.rotate}deg) translateY(${i * 10}px)`,
-                  zIndex: COMANDAS.length - i,
-                }}
-              >
-                <div className="flex items-center justify-between border-b border-dashed border-border pb-3">
-                  <span className="font-mono text-xs font-bold uppercase tracking-widest text-text-secondary">
-                    Comanda #{c.id}
-                  </span>
-                  <span
+          <Card className="rounded-2xl border border-border p-6 shadow-xl">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">Salón Principal</p>
+                  <p className="text-xs text-text-secondary">Turno noche · Sábado</p>
+                </div>
+                <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                  En vivo
+                </span>
+              </div>
+
+              <div className="mt-6 grid grid-cols-3 gap-4">
+                {FLOOR_TABLES.map((t) => (
+                  <div
+                    key={t.id}
                     className={cn(
-                      "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide",
-                      c.ready ? "text-success" : "text-primary"
+                      "flex aspect-square flex-col items-center justify-center rounded-lg text-sm font-bold transition-transform hover:scale-105",
+                      TABLE_STATE_STYLES[t.state]
                     )}
                   >
-                    <span className={cn("h-1.5 w-1.5 rounded-full", c.ready ? "bg-success" : "bg-primary animate-pulse")} />
-                    {c.ready ? "Listo" : "En cocina"}
-                  </span>
-                </div>
-                <p className="mt-3 font-mono text-sm font-semibold text-text-primary">{c.table}</p>
-                <ul className="mt-2 space-y-1 font-mono text-xs text-text-secondary">
-                  {c.items.map((item) => (
-                    <li key={item} className="flex justify-between gap-2">
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="hero-ticket-stub mt-4 -mx-5 -mb-5 h-4 bg-surface" />
+                    <span>M{t.id}</span>
+                    <span className="text-[10px] font-medium opacity-80">{t.seats}p</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+
+              <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-xs text-text-secondary">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-sm border-2 border-border bg-background" /> Libre
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-sm bg-primary" /> Ocupada
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-sm border-2 border-dashed border-primary bg-primary-light" /> Reservada
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </header>
 
