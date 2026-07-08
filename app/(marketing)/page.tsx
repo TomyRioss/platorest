@@ -152,73 +152,65 @@ export default function LandingPage() {
 
 
       <section className="border-t border-border bg-surface px-6 py-20">
-        <div data-impeccable-variants="d26e3a7b" data-impeccable-variant-count="3" style={{ display: "contents" }}>
-          {/* impeccable-variants-start d26e3a7b */}
-          {/* Original */}
-          <div data-impeccable-variant="original">
-            <div className="mx-auto max-w-6xl">
-              <div className="mb-14 text-center">
-                <h2 className="text-3xl font-bold text-text-primary">
-                  Potencia cada rincón de tu cocina
-                </h2>
-                <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-                  Diseñado para ser tan afilado como el cuchillo de un chef.
-                  Funcionalidades integradas para una operación sin fricción.
-                </p>
-              </div>
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-14 text-center">
+            <h2 className="text-3xl font-bold text-text-primary">
+              Potencia cada rincón de tu cocina
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
+              Diseñado para ser tan afilado como el cuchillo de un chef.
+              Funcionalidades integradas para una operación sin fricción.
+            </p>
+          </div>
 
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-                {FEATURES.map((f) => (
-                  <Card
-                    key={f.title}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
+            {FEATURES.map((f) => (
+              <Card
+                key={f.title}
+                className={cn(
+                  "rounded-xl border border-border p-8",
+                  f.span,
+                  f.accent && "border-transparent bg-primary text-white"
+                )}
+              >
+                <CardContent className="flex items-center gap-4 p-0">
+                  <div
                     className={cn(
-                      "rounded-xl border border-border p-8",
-                      f.span,
-                      f.accent && "border-transparent bg-primary text-white"
+                      "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-lg",
+                      f.accent ? "bg-white/20" : "bg-primary-light"
                     )}
                   >
-                    <CardContent className="flex items-center gap-4 p-0">
-                      <div
-                        className={cn(
-                          "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-lg",
-                          f.accent ? "bg-white/20" : "bg-primary-light"
-                        )}
-                      >
-                        {f.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className={cn("truncate text-xl font-semibold", f.accent ? "text-white" : "text-text-primary")}>
-                          {f.title}
-                        </h3>
-                        <p
-                          className={cn(
-                            "mt-1 truncate text-sm",
-                            f.accent ? "text-white/90" : "text-text-secondary"
-                          )}
-                        >
-                          {f.desc}
-                        </p>
-                      </div>
-                      <img
-                        src={f.image}
-                        alt={f.title}
-                        className="hidden h-16 w-16 flex-shrink-0 rounded-lg object-cover sm:block"
-                        loading="lazy"
-                      />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="mt-6 text-center">
-                <Link href="/funcionalidades" className="font-semibold text-primary hover:text-primary-hover">
-                  Ver todas las funcionalidades →
-                </Link>
-              </div>
-            </div>
+                    {f.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className={cn("truncate text-xl font-semibold", f.accent ? "text-white" : "text-text-primary")}>
+                      {f.title}
+                    </h3>
+                    <p
+                      className={cn(
+                        "mt-1 truncate text-sm",
+                        f.accent ? "text-white/90" : "text-text-secondary"
+                      )}
+                    >
+                      {f.desc}
+                    </p>
+                  </div>
+                  <img
+                    src={f.image}
+                    alt={f.title}
+                    className="hidden h-16 w-16 flex-shrink-0 rounded-lg object-cover sm:block"
+                    loading="lazy"
+                  />
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          {/* Variants: insert below this line */}
-          {/* impeccable-variants-end d26e3a7b */}
+
+          <div className="mt-6 text-center">
+            <Link href="/funcionalidades" className="font-semibold text-primary hover:text-primary-hover">
+              Ver todas las funcionalidades →
+            </Link>
+          </div>
         </div>
       </section>
 
