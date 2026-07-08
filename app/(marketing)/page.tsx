@@ -1,4 +1,42 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import LeadForm from "./_components/LeadForm";
+
+const FEATURES = [
+  {
+    title: "Smart POS",
+    desc: "Ventas rápidas, cierres de caja automatizados y múltiples métodos de pago integrados en una interfaz intuitiva.",
+    span: "md:col-span-8",
+    accent: false,
+  },
+  {
+    title: "Inventario en tiempo real",
+    desc: "Control de stock automático con alertas antes de que falte un insumo.",
+    span: "md:col-span-4",
+    accent: false,
+  },
+  {
+    title: "Mapa de mesas",
+    desc: "Visualizá tu salón en tiempo real. Reservas y rotación con un click.",
+    span: "md:col-span-4",
+    accent: false,
+  },
+  {
+    title: "Menú digital QR",
+    desc: "Actualizá precios y platos al instante. Tus clientes piden desde su celular sin esperas.",
+    span: "md:col-span-8",
+    accent: true,
+  },
+];
+
+const INCLUDED = [
+  "Soporte 24/7 en español",
+  "Usuarios ilimitados",
+  "Actualizaciones gratuitas de por vida",
+];
 
 export default function LandingPage() {
   return (
@@ -6,9 +44,9 @@ export default function LandingPage() {
       <header className="relative overflow-hidden bg-background pt-16 pb-20 md:pt-24 md:pb-28">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 md:grid-cols-2">
           <div>
-            <span className="mb-4 inline-block rounded-full border border-primary/20 bg-primary-light px-4 py-1 text-xs font-semibold tracking-wide text-primary">
+            <Badge className="mb-4 bg-primary-light text-primary hover:bg-primary-light">
               Gestión Gastronómica 2.0
-            </span>
+            </Badge>
             <h1 className="text-4xl font-bold leading-tight tracking-tight text-text-primary sm:text-5xl">
               Todo tu restaurante bajo{" "}
               <span className="text-primary">un solo control.</span>
@@ -20,13 +58,16 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/menu/demo"
-                className="rounded-lg bg-primary px-6 py-3 text-center font-semibold text-white shadow-lg hover:bg-primary-hover"
+                className={cn(buttonVariants({ size: "lg" }), "h-auto rounded-lg px-6 py-3 text-base shadow-lg")}
               >
                 Iniciar prueba gratis
               </Link>
               <Link
                 href="/login"
-                className="rounded-lg border-2 border-primary px-6 py-3 text-center font-semibold text-primary hover:bg-primary-light"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-auto rounded-lg border-2 border-primary px-6 py-3 text-base text-primary hover:bg-primary-light hover:text-primary"
+                )}
               >
                 Ingresar al panel
               </Link>
@@ -34,13 +75,16 @@ export default function LandingPage() {
           </div>
 
           <div className="relative">
-            <div className="rounded-xl border border-border bg-surface p-10 shadow-xl">
-              <div className="flex aspect-video items-center justify-center rounded-lg bg-primary-light">
-                <span className="text-sm font-medium text-primary">
-                  Panel PlatoRest
-                </span>
-              </div>
-            </div>
+            <Card className="overflow-hidden rounded-xl border border-border p-0 shadow-xl">
+              <CardContent className="p-0">
+                <img
+                  src="https://images.pexels.com/photos/2544829/pexels-photo-2544829.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                  alt="Chef trabajando en cocina de restaurante"
+                  className="aspect-video w-full object-cover"
+                  loading="eager"
+                />
+              </CardContent>
+            </Card>
             <div className="absolute -bottom-6 -left-6 hidden items-center gap-3 rounded-xl border border-border bg-background p-4 shadow-lg md:flex">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
                 ↑
@@ -67,58 +111,99 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-            <div className="rounded-xl border border-border bg-background p-8 md:col-span-8">
-              <h3 className="text-xl font-semibold text-text-primary">Smart POS</h3>
-              <p className="mt-2 max-w-md text-sm text-text-secondary">
-                Ventas rápidas, cierres de caja automatizados y múltiples
-                métodos de pago integrados en una interfaz intuitiva.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-background p-8 md:col-span-4">
-              <h3 className="text-xl font-semibold text-text-primary">Inventario en tiempo real</h3>
-              <p className="mt-2 text-sm text-text-secondary">
-                Control de stock automático con alertas antes de que falte un insumo.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-background p-8 md:col-span-4">
-              <h3 className="text-xl font-semibold text-text-primary">Mapa de mesas</h3>
-              <p className="mt-2 text-sm text-text-secondary">
-                Visualizá tu salón en tiempo real. Reservas y rotación con un click.
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-primary p-8 text-white md:col-span-8">
-              <h3 className="text-xl font-semibold">Menú digital QR</h3>
-              <p className="mt-2 max-w-md text-sm text-white/90">
-                Actualizá precios y platos al instante. Tus clientes piden
-                desde su celular sin esperas.
-              </p>
-            </div>
+            {FEATURES.map((f) => (
+              <Card
+                key={f.title}
+                className={cn(
+                  "rounded-xl border border-border p-8",
+                  f.span,
+                  f.accent && "border-transparent bg-primary text-white"
+                )}
+              >
+                <CardContent className="p-0">
+                  <h3 className={cn("text-xl font-semibold", f.accent ? "text-white" : "text-text-primary")}>
+                    {f.title}
+                  </h3>
+                  <p className={cn("mt-2 max-w-md text-sm", f.accent ? "text-white/90" : "text-text-secondary")}>
+                    {f.desc}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="mt-6 text-center">
-            <Link
-              href="/funcionalidades"
-              className="font-semibold text-primary hover:text-primary-hover"
-            >
+            <Link href="/funcionalidades" className="font-semibold text-primary hover:text-primary-hover">
               Ver todas las funcionalidades →
             </Link>
           </div>
         </div>
       </section>
 
-      <section className="px-6 py-20 text-center">
-        <h2 className="text-2xl font-semibold text-text-primary">
-          Sumá un 24% más de eficiencia operativa
-        </h2>
-        <Link
-          href="/precios"
-          className="mt-6 inline-block rounded-lg bg-primary px-6 py-3 font-medium text-white hover:bg-primary-hover"
-        >
-          Ver planes
-        </Link>
+      <section className="px-6 py-24">
+        <div className="mx-auto max-w-5xl">
+          <Card className="relative overflow-hidden rounded-3xl border-4 border-primary p-8 shadow-xl md:p-12">
+            <Badge className="absolute right-0 top-0 rounded-none rounded-bl-3xl bg-primary px-4 py-2 text-white hover:bg-primary">
+              RECOMENDADO
+            </Badge>
+            <CardContent className="grid grid-cols-1 items-center gap-10 p-0 lg:grid-cols-2">
+              <div>
+                <h2 className="text-3xl font-bold text-text-primary sm:text-4xl">
+                  Un solo plan, <br />
+                  <span className="text-primary">todo el poder.</span>
+                </h2>
+                <p className="mt-4 text-lg text-text-secondary">
+                  Sin sorpresas ni costos ocultos. Acceso total a todas las
+                  herramientas que tu restaurante necesita para crecer.
+                </p>
+                <ul className="mt-6 space-y-2">
+                  {INCLUDED.map((item) => (
+                    <li key={item} className="flex items-center gap-2 text-text-primary">
+                      <span className="text-primary">✓</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-surface p-8 text-center lg:text-right">
+                <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary">
+                  Suscripción mensual
+                </p>
+                <p className="mt-2 text-4xl font-bold text-primary">
+                  $40.000<span className="text-lg font-medium text-text-secondary">/mes</span>
+                </p>
+                <p className="mt-2 text-sm font-semibold text-primary">
+                  Todo incluido, sin cargos por transacción.
+                </p>
+                <Link
+                  href="/precios"
+                  className={cn(buttonVariants({ size: "lg" }), "mt-6 h-auto w-full rounded-lg px-6 py-3 text-base")}
+                >
+                  Activar plan ahora
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="bg-primary px-6 py-24 text-white">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-bold sm:text-4xl">Potencia tu restaurante hoy</h2>
+            <p className="mt-4 max-w-md text-white/80">
+              Dejanos tus datos y un especialista en sistemas gastronómicos te
+              contactará para una demo personalizada de 15 minutos.
+            </p>
+          </div>
+
+          <Card className="rounded-2xl border-0 p-8 shadow-2xl">
+            <CardContent className="p-0">
+              <LeadForm />
+            </CardContent>
+          </Card>
+        </div>
       </section>
     </main>
   );
