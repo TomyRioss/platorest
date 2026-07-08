@@ -128,27 +128,32 @@ export default function LandingPage() {
                   f.accent && "border-transparent bg-primary text-white"
                 )}
               >
-                <CardContent className="flex items-center gap-6 p-0">
-                  <div className="flex-1">
-                    <div
-                      className={cn(
-                        "mb-3 flex h-10 w-10 items-center justify-center rounded-full text-lg",
-                        f.accent ? "bg-white/20" : "bg-primary-light"
-                      )}
-                    >
-                      {f.icon}
-                    </div>
-                    <h3 className={cn("text-xl font-semibold", f.accent ? "text-white" : "text-text-primary")}>
+                <CardContent className="flex items-center gap-4 p-0">
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-lg",
+                      f.accent ? "bg-white/20" : "bg-primary-light"
+                    )}
+                  >
+                    {f.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className={cn("truncate text-xl font-semibold", f.accent ? "text-white" : "text-text-primary")}>
                       {f.title}
                     </h3>
-                    <p className={cn("mt-2 max-w-md text-sm", f.accent ? "text-white/90" : "text-text-secondary")}>
+                    <p
+                      className={cn(
+                        "mt-1 truncate text-sm",
+                        f.accent ? "text-white/90" : "text-text-secondary"
+                      )}
+                    >
                       {f.desc}
                     </p>
                   </div>
                   <img
                     src={f.image}
                     alt={f.title}
-                    className="hidden h-24 w-24 flex-shrink-0 rounded-lg object-cover sm:block"
+                    className="hidden h-16 w-16 flex-shrink-0 rounded-lg object-cover sm:block"
                     loading="lazy"
                   />
                 </CardContent>
