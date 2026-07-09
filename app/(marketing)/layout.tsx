@@ -1,4 +1,5 @@
 import TopNavBar from "./_components/TopNavBar";
+import Footer from "./_components/Footer";
 import WhatsappFloatButton from "./_components/WhatsappFloatButton";
 
 export default function MarketingLayout({
@@ -8,6 +9,7 @@ export default function MarketingLayout({
     <>
       <TopNavBar />
       {children}
+      <Footer />
       <WhatsappFloatButton />
     </>
   );

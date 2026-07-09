@@ -1,43 +1,69 @@
 import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const INCLUDED = [
   "Smart POS ilimitado",
   "Inventario en tiempo real",
-  "Mapeo de mesas y reservas",
   "Menú QR digital",
-  "Kitchen Display System",
-  "Soporte 24/7",
+  "Soporte 24/7 feriados y fines de semana",
+  "Soporte Presencial CABA y GBA",
+  "Todas las funcionalidades actuales y futuras",
 ];
 
 export default function PreciosPage() {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-20 text-center">
-      <h1 className="text-3xl font-bold text-text-primary">Precios</h1>
-      <p className="mt-3 text-text-secondary">
-        Un solo plan, todo incluido. Sin sorpresas.
-      </p>
+    <main className="px-6 py-32">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-14 text-center">
+          <h1 className="text-4xl font-bold text-text-primary sm:text-5xl">
+            Un solo plan, todo incluido
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-text-secondary">
+            Sin sorpresas ni costos ocultos. Acceso total a todas las
+            herramientas que tu restaurante necesita para crecer.
+          </p>
+        </div>
 
-      <div className="mt-12 rounded border border-border bg-surface p-10">
-        <p className="text-sm font-medium text-text-secondary">Plan único</p>
-        <p className="mt-2 text-5xl font-bold text-text-primary">
-          $40.000<span className="text-lg font-medium text-text-secondary">/mes</span>
-        </p>
+        <Card className="relative overflow-hidden rounded-3xl border-2 border-primary p-16 shadow-xl md:p-20">
+          <CardContent className="grid grid-cols-1 items-center gap-12 p-0 lg:grid-cols-2">
+            <div>
+              <h2 className="text-4xl font-bold text-primary sm:text-5xl">
+                Plan fundadores
+              </h2>
+              <ul className="mt-8 space-y-4 text-lg">
+                {INCLUDED.map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-text-primary">
+                    <span className="mt-1 text-primary">✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-8 text-base text-text-secondary">
+                Tiempo limitado, solo para nuestros primeros 100 clientes.
+              </p>
+            </div>
 
-        <ul className="mt-8 space-y-3 text-left">
-          {INCLUDED.map((item) => (
-            <li key={item} className="flex items-center gap-2 text-text-primary">
-              <span className="text-primary">✓</span>
-              {item}
-            </li>
-          ))}
-        </ul>
-
-        <Link
-          href="/testimonios"
-          className="mt-10 inline-block rounded bg-primary px-6 py-3 font-medium text-white hover:bg-primary-hover"
-        >
-          Contactanos
-        </Link>
+            <div className="rounded-2xl border border-border bg-surface p-10 text-center lg:text-right">
+              <p className="text-sm font-semibold uppercase tracking-widest text-text-secondary">
+                Suscripción mensual
+              </p>
+              <p className="mt-3 text-6xl font-bold text-primary">
+                $40.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
+              </p>
+              <p className="mt-3 text-base font-semibold text-primary">
+                Un plan, todo incluido.
+              </p>
+              <Link
+                href="mailto:hola@platorest.com"
+                className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}
+              >
+                Contactanos
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

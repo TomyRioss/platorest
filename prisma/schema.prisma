@@ -1,0 +1,456 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Tenancy ──────────────────────────────────────────────
+
+model Business {
+  id            String         @id @default(cuid())
+  name          String
+  createdAt     DateTime       @default(now())
+  restaurants   Restaurant[]
+  memberships   Membership[]
+  customers     Customer[]
+  loyaltyConfig LoyaltyConfig?
+  actions       LoyaltyAction[]
+  rewards       Reward[]
+}
+
+model Restaurant {
+  id               String   @id @default(cuid())
+  businessId       String
+  business         Business @relation(fields: [businessId], references: [id])
+  name             String
+  slug             String   @unique
+  address          String
+  lat              Float?
+  lng              Float?
+  deliveryRadiusKm Float
+  createdAt        DateTime @default(now())
+
+  memberships       Membership[]
+  suppliers         Supplier[]
+  ingredients       Ingredient[]
+  purchaseDocuments PurchaseDocument[]
+  categories        Category[]
+  products          Product[]
+  orders            Order[]
+  registerSessions  RegisterSession[]
+  auditLogs         AuditLog[]
+  surveys           Survey[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+
+  memberships      Membership[]
+  customer         Customer?
+  ordersCreated    Order[]           @relation("OrderCreatedBy")
+  registerSessions RegisterSession[]
+  stockMovements   StockMovement[]
+  auditLogs        AuditLog[]
+}
+
+model Membership {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  businessId   String
+  business     Business    @relation(fields: [businessId], references: [id])
+  // null = access to every branch of the business
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  role         Role
+
+  @@unique([userId, businessId, restaurantId])
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  CASHIER
+  WAITER
+}
+
+// ── Inventory ────────────────────────────────────────────
+
+model Supplier {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  contact      String?
+  batches      Batch[]
+}
+
+model Ingredient {
+  id              String     @id @default(cuid())
+  restaurantId    String
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
+  name            String
+  unit            Unit
+  lowStockAlertAt Decimal    @default(0)
+  batches         Batch[]
+  recipeItems     RecipeItem[]
+
+  @@unique([restaurantId, name])
+}
+
+enum Unit {
+  G
+  ML
+  UNIT
+}
+
+model PurchaseDocument {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  fileUrl      String
+  status       DocumentStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+  batches      Batch[]
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+model Batch {
+  id           String            @id @default(cuid())
+  code         String
+  ingredientId String
+  ingredient   Ingredient        @relation(fields: [ingredientId], references: [id])
+  supplierId   String?
+  supplier     Supplier?         @relation(fields: [supplierId], references: [id])
+  documentId   String?
+  document     PurchaseDocument? @relation(fields: [documentId], references: [id])
+  unitCost     Decimal
+  receivedAt   DateTime          @default(now())
+  expiresAt    DateTime?
+  movements    StockMovement[]
+
+  @@index([ingredientId, receivedAt])
+}
+
+model StockMovement {
+  id          String       @id @default(cuid())
+  batchId     String
+  batch       Batch        @relation(fields: [batchId], references: [id])
+  // signed: purchases positive, sales/waste negative. Batch stock = SUM(qty).
+  qty         Decimal
+  type        MovementType
+  orderItemId String?
+  orderItem   OrderItem?   @relation(fields: [orderItemId], references: [id])
+  reason      String?
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id])
+  createdAt   DateTime     @default(now())
+
+  @@index([batchId])
+  @@index([createdAt])
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  WASTE
+  ADJUSTMENT
+  RETURN
+}
+
+// ── Menu ─────────────────────────────────────────────────
+
+model Category {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  name         String
+  sortOrder    Int        @default(0)
+  products     Product[]
+}
+
+model Product {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  name         String
+  description  String?
+  imageUrl     String?
+  active       Boolean    @default(true)
+  variants     ProductVariant[]
+}
+
+model ProductVariant {
+  id          String       @id @default(cuid())
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id])
+  name        String       @default("Único")
+  price       Decimal
+  isDefault   Boolean      @default(false)
+  recipeItems RecipeItem[]
+  orderItems  OrderItem[]
+}
+
+model RecipeItem {
+  id           String         @id @default(cuid())
+  variantId    String
+  variant      ProductVariant @relation(fields: [variantId], references: [id])
+  ingredientId String
+  ingredient   Ingredient     @relation(fields: [ingredientId], references: [id])
+  // in the ingredient's base unit
+  qty          Decimal
+
+  @@unique([variantId, ingredientId])
+}
+
+// ── Orders ───────────────────────────────────────────────
+
+model Order {
+  id                String           @id @default(cuid())
+  restaurantId      String
+  restaurant        Restaurant       @relation(fields: [restaurantId], references: [id])
+  customerId        String?
+  customer          Customer?        @relation(fields: [customerId], references: [id])
+  source            OrderSource
+  fulfillment       Fulfillment
+  tableNumber       String?
+  deliveryAddress   String?
+  status            OrderStatus      @default(PENDING)
+  paymentMethod     PaymentMethod
+  total             Decimal
+  createdByUserId   String?
+  createdBy         User?            @relation("OrderCreatedBy", fields: [createdByUserId], references: [id])
+  registerSessionId String?
+  registerSession   RegisterSession? @relation(fields: [registerSessionId], references: [id])
+  items             OrderItem[]
+  surveys           Survey[]
+  createdAt         DateTime         @default(now())
+
+  @@index([restaurantId, createdAt])
+  @@index([createdByUserId, createdAt])
+}
+
+model OrderItem {
+  id        String         @id @default(cuid())
+  orderId   String
+  order     Order          @relation(fields: [orderId], references: [id])
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  quantity  Int
+  unitPrice Decimal
+  // snapshot of real batch cost consumed (FIFO) at confirmation time
+  unitCost  Decimal        @default(0)
+  movements StockMovement[]
+}
+
+enum OrderSource {
+  POS
+  WEB
+}
+
+enum Fulfillment {
+  PICKUP
+  DELIVERY
+  DINE_IN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  MERCADOPAGO
+}
+
+// ── Register / cashier ───────────────────────────────────
+
+model RegisterSession {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  openedAt     DateTime   @default(now())
+  closedAt     DateTime?
+  openingCash  Decimal?
+  closingCash  Decimal?
+  orders       Order[]
+
+  @@index([userId, openedAt])
+}
+
+// ── Loyalty (business-level) ─────────────────────────────
+
+model Customer {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  userId     String?  @unique
+  user       User?    @relation(fields: [userId], references: [id])
+  name       String
+  phone      String?
+  email      String?
+  createdAt  DateTime @default(now())
+
+  orders            Order[]
+  pointsTransactions PointsTransaction[]
+  actionCompletions ActionCompletion[]
+  redemptions       Redemption[]
+  surveys           Survey[]
+
+  @@unique([businessId, phone])
+}
+
+model LoyaltyConfig {
+  id                String   @id @default(cuid())
+  businessId        String   @unique
+  business          Business @relation(fields: [businessId], references: [id])
+  pointsPerCurrency Decimal  @default(1)
+}
+
+model PointsTransaction {
+  id           String      @id @default(cuid())
+  customerId   String
+  customer     Customer    @relation(fields: [customerId], references: [id])
+  // signed: earn positive, redeem negative. Balance = SUM(points).
+  points       Int
+  reason       PointsReason
+  orderId      String?
+  redemptionId String?
+  createdAt    DateTime    @default(now())
+
+  @@index([customerId, createdAt])
+}
+
+enum PointsReason {
+  ORDER
+  ACTION
+  REDEMPTION
+  ADJUSTMENT
+}
+
+model LoyaltyAction {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  name        String
+  points      Int
+  active      Boolean  @default(true)
+  completions ActionCompletion[]
+}
+
+model ActionCompletion {
+  id         String        @id @default(cuid())
+  actionId   String
+  action     LoyaltyAction @relation(fields: [actionId], references: [id])
+  customerId String
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  createdAt  DateTime      @default(now())
+}
+
+model Reward {
+  id             String   @id @default(cuid())
+  businessId     String
+  business       Business @relation(fields: [businessId], references: [id])
+  name           String
+  description    String?
+  // one of the two: points-store reward or visit-milestone gift
+  pointsCost     Int?
+  visitMilestone Int?
+  active         Boolean  @default(true)
+  redemptions    Redemption[]
+}
+
+model Redemption {
+  id         String           @id @default(cuid())
+  rewardId   String
+  reward     Reward           @relation(fields: [rewardId], references: [id])
+  customerId String
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  code       String           @unique
+  status     RedemptionStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  usedAt     DateTime?
+}
+
+enum RedemptionStatus {
+  PENDING
+  USED
+  EXPIRED
+}
+
+model Survey {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  customerId   String?
+  customer     Customer?  @relation(fields: [customerId], references: [id])
+  orderId      String?
+  order        Order?     @relation(fields: [orderId], references: [id])
+  rating       Int // 1-5
+  nps          Int? // 0-10
+  comment      String?
+  createdAt    DateTime   @default(now())
+
+  @@index([restaurantId, createdAt])
+}
+
+// ── Audit ────────────────────────────────────────────────
+
+model AuditLog {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id])
+  action       String
+  entityType   String?
+  entityId     String?
+  payload      Json?
+  createdAt    DateTime   @default(now())
+
+  @@index([userId, createdAt])
+  @@index([restaurantId, createdAt])
+}
+
+// ── Marketing leads (unchanged) ──────────────────────────
+
+model Lead {
+  id             String     @id @default(cuid())
+  name           String
+  email          String
+  restaurantName String
+  phone          String
+  status         LeadStatus @default(NEW)
+  notes          String?
+  createdAt      DateTime   @default(now())
+
+  @@map("admin_leads")
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  REJECTED
+  CONVERTED
+}
