@@ -59,6 +59,6 @@ export async function updateOrderStatus(
     return { ok: false, error: message };
   }
 
-  revalidatePath("/admin/pedidos");
+  revalidatePath("/dashboard/pedidos");
   return { ok: true };
 }

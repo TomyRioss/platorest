@@ -11,6 +11,8 @@ datasource db {
 model Business {
   id            String         @id @default(cuid())
   name          String
+  slug          String         @unique
+  logo          String?
   createdAt     DateTime       @default(now())
   restaurants   Restaurant[]
   memberships   Membership[]
@@ -18,15 +20,37 @@ model Business {
   loyaltyConfig LoyaltyConfig?
   actions       LoyaltyAction[]
   rewards       Reward[]
+  socialLinks   SocialLink[]
+}
+
+model SocialLink {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  platform   SocialPlatform
+  url        String
+  sortOrder  Int      @default(0)
+
+  @@unique([businessId, platform])
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  FACEBOOK
+  WHATSAPP
+  TIKTOK
+  X
 }
 
 model Restaurant {
   id               String   @id @default(cuid())
   businessId       String
-  business         Business @relation(fields: [businessId], references: [id])
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   name             String
   slug             String   @unique
-  address          String
+  logo             String?
+  banner           String?
+  address          String?
   lat              Float?
   lng              Float?
   deliveryRadiusKm Float
@@ -45,18 +69,58 @@ model Restaurant {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String
-  createdAt    DateTime @default(now())
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  phone         String?   @unique
+  phoneVerified DateTime?
+  passwordHash  String?
+  name          String
+  image         String?
+  createdAt     DateTime  @default(now())
 
+  accounts         Account[]
+  sessions         Session[]
   memberships      Membership[]
-  customer         Customer?
+  customers        Customer[]
   ordersCreated    Order[]           @relation("OrderCreatedBy")
   registerSessions RegisterSession[]
   stockMovements   StockMovement[]
   auditLogs        AuditLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Membership {
@@ -64,10 +128,10 @@ model Membership {
   userId       String
   user         User        @relation(fields: [userId], references: [id])
   businessId   String
-  business     Business    @relation(fields: [businessId], references: [id])
+  business     Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   // null = access to every branch of the business
   restaurantId String?
-  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   role         Role
 
   @@unique([userId, businessId, restaurantId])
@@ -85,7 +149,7 @@ enum Role {
 model Supplier {
   id           String     @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   name         String
   contact      String?
   batches      Batch[]
@@ -94,7 +158,7 @@ model Supplier {
 model Ingredient {
   id              String     @id @default(cuid())
   restaurantId    String
-  restaurant      Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   name            String
   unit            Unit
   lowStockAlertAt Decimal    @default(0)
@@ -113,7 +177,7 @@ enum Unit {
 model PurchaseDocument {
   id           String     @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   fileUrl      String
   status       DocumentStatus @default(PENDING)
   createdAt    DateTime   @default(now())
@@ -130,11 +194,11 @@ model Batch {
   id           String            @id @default(cuid())
   code         String
   ingredientId String
-  ingredient   Ingredient        @relation(fields: [ingredientId], references: [id])
+  ingredient   Ingredient        @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
   supplierId   String?
-  supplier     Supplier?         @relation(fields: [supplierId], references: [id])
+  supplier     Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   documentId   String?
-  document     PurchaseDocument? @relation(fields: [documentId], references: [id])
+  document     PurchaseDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
   unitCost     Decimal
   receivedAt   DateTime          @default(now())
   expiresAt    DateTime?
@@ -146,15 +210,15 @@ model Batch {
 model StockMovement {
   id          String       @id @default(cuid())
   batchId     String
-  batch       Batch        @relation(fields: [batchId], references: [id])
+  batch       Batch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
   // signed: purchases positive, sales/waste negative. Batch stock = SUM(qty).
   qty         Decimal
   type        MovementType
   orderItemId String?
-  orderItem   OrderItem?   @relation(fields: [orderItemId], references: [id])
+  orderItem   OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
   reason      String?
   userId      String?
-  user        User?        @relation(fields: [userId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt   DateTime     @default(now())
 
   @@index([batchId])
@@ -174,7 +238,7 @@ enum MovementType {
 model Category {
   id           String     @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   name         String
   sortOrder    Int        @default(0)
   products     Product[]
@@ -183,12 +247,13 @@ model Category {
 model Product {
   id           String     @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   categoryId   String?
-  category     Category?  @relation(fields: [categoryId], references: [id])
+  category     Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   name         String
   description  String?
   imageUrl     String?
+  gallery      String[]   @default([])
   active       Boolean    @default(true)
   variants     ProductVariant[]
 }
@@ -196,10 +261,15 @@ model Product {
 model ProductVariant {
   id          String       @id @default(cuid())
   productId   String
-  product     Product      @relation(fields: [productId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
   name        String       @default("Único")
+  sku         String?
   price       Decimal
+  costPrice   Decimal?
+  packagingPrice Decimal?
   isDefault   Boolean      @default(false)
+  trackStock  Boolean      @default(false)
+  stockQty    Int?
   recipeItems RecipeItem[]
   orderItems  OrderItem[]
 }
@@ -207,9 +277,9 @@ model ProductVariant {
 model RecipeItem {
   id           String         @id @default(cuid())
   variantId    String
-  variant      ProductVariant @relation(fields: [variantId], references: [id])
+  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   ingredientId String
-  ingredient   Ingredient     @relation(fields: [ingredientId], references: [id])
+  ingredient   Ingredient     @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
   // in the ingredient's base unit
   qty          Decimal
 
@@ -221,9 +291,9 @@ model RecipeItem {
 model Order {
   id                String           @id @default(cuid())
   restaurantId      String
-  restaurant        Restaurant       @relation(fields: [restaurantId], references: [id])
+  restaurant        Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   customerId        String?
-  customer          Customer?        @relation(fields: [customerId], references: [id])
+  customer          Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
   source            OrderSource
   fulfillment       Fulfillment
   tableNumber       String?
@@ -232,9 +302,9 @@ model Order {
   paymentMethod     PaymentMethod
   total             Decimal
   createdByUserId   String?
-  createdBy         User?            @relation("OrderCreatedBy", fields: [createdByUserId], references: [id])
+  createdBy         User?            @relation("OrderCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   registerSessionId String?
-  registerSession   RegisterSession? @relation(fields: [registerSessionId], references: [id])
+  registerSession   RegisterSession? @relation(fields: [registerSessionId], references: [id], onDelete: SetNull)
   items             OrderItem[]
   surveys           Survey[]
   createdAt         DateTime         @default(now())
@@ -246,9 +316,9 @@ model Order {
 model OrderItem {
   id        String         @id @default(cuid())
   orderId   String
-  order     Order          @relation(fields: [orderId], references: [id])
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variantId String
-  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   quantity  Int
   unitPrice Decimal
   // snapshot of real batch cost consumed (FIFO) at confirmation time
@@ -286,7 +356,7 @@ enum PaymentMethod {
 model RegisterSession {
   id           String     @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   userId       String
   user         User       @relation(fields: [userId], references: [id])
   openedAt     DateTime   @default(now())
@@ -303,9 +373,9 @@ model RegisterSession {
 model Customer {
   id         String   @id @default(cuid())
   businessId String
-  business   Business @relation(fields: [businessId], references: [id])
-  userId     String?  @unique
-  user       User?    @relation(fields: [userId], references: [id])
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   name       String
   phone      String?
   email      String?
@@ -318,19 +388,20 @@ model Customer {
   surveys           Survey[]
 
   @@unique([businessId, phone])
+  @@unique([businessId, userId])
 }
 
 model LoyaltyConfig {
   id                String   @id @default(cuid())
   businessId        String   @unique
-  business          Business @relation(fields: [businessId], references: [id])
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   pointsPerCurrency Decimal  @default(1)
 }
 
 model PointsTransaction {
   id           String      @id @default(cuid())
   customerId   String
-  customer     Customer    @relation(fields: [customerId], references: [id])
+  customer     Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   // signed: earn positive, redeem negative. Balance = SUM(points).
   points       Int
   reason       PointsReason
@@ -351,7 +422,7 @@ enum PointsReason {
 model LoyaltyAction {
   id          String   @id @default(cuid())
   businessId  String
-  business    Business @relation(fields: [businessId], references: [id])
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   name        String
   points      Int
   active      Boolean  @default(true)
@@ -361,16 +432,16 @@ model LoyaltyAction {
 model ActionCompletion {
   id         String        @id @default(cuid())
   actionId   String
-  action     LoyaltyAction @relation(fields: [actionId], references: [id])
+  action     LoyaltyAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
   customerId String
-  customer   Customer      @relation(fields: [customerId], references: [id])
+  customer   Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   createdAt  DateTime      @default(now())
 }
 
 model Reward {
   id             String   @id @default(cuid())
   businessId     String
-  business       Business @relation(fields: [businessId], references: [id])
+  business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   name           String
   description    String?
   // one of the two: points-store reward or visit-milestone gift
@@ -383,9 +454,9 @@ model Reward {
 model Redemption {
   id         String           @id @default(cuid())
   rewardId   String
-  reward     Reward           @relation(fields: [rewardId], references: [id])
+  reward     Reward           @relation(fields: [rewardId], references: [id], onDelete: Cascade)
   customerId String
-  customer   Customer         @relation(fields: [customerId], references: [id])
+  customer   Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
   code       String           @unique
   status     RedemptionStatus @default(PENDING)
   createdAt  DateTime         @default(now())
@@ -401,11 +472,11 @@ enum RedemptionStatus {
 model Survey {
   id           String     @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   customerId   String?
-  customer     Customer?  @relation(fields: [customerId], references: [id])
+  customer     Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
   orderId      String?
-  order        Order?     @relation(fields: [orderId], references: [id])
+  order        Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
   rating       Int // 1-5
   nps          Int? // 0-10
   comment      String?
@@ -419,9 +490,9 @@ model Survey {
 model AuditLog {
   id           String     @id @default(cuid())
   restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   userId       String?
-  user         User?      @relation(fields: [userId], references: [id])
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   action       String
   entityType   String?
   entityId     String?

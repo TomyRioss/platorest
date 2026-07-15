@@ -25,7 +25,7 @@ export default async function ClienteDetailPage({
   return (
     <main className="min-h-screen bg-surface p-4 md:p-6">
       <div className="mx-auto max-w-2xl">
-        <Link href="/admin/clientes" className="text-sm text-primary">
+        <Link href="/dashboard/clientes" className="text-sm text-primary">
           ← Clientes
         </Link>
 

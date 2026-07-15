@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HiCheckCircle, HiChatBubbleLeftRight, HiEye, HiEyeSlash } from "react-icons/hi2";
+import { FcGoogle } from "react-icons/fc";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
-import { HiCheckCircle, HiChatBubbleLeftRight } from "react-icons/hi2";
+import { signIn } from "next-auth/react";
 
 const BENEFITS = [
   "Crea tu menú digital en segundos",
@@ -17,20 +20,25 @@ const BENEFITS = [
 const WHERE_HEARD = [
   "Referido",
   "Anuncios Facebook",
-  "Anuncios búsqueda web",
+  "Búsqueda web",
   "Recomendación",
 ];
 
 export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [whereHeard, setWhereHeard] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,9 +56,53 @@ export default function RegisterPage() {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, password, restaurantName, phone }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? "No se pudo crear la cuenta.");
+      }
+
+      fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, restaurantName, phone, notes: whereHeard }),
+      }).catch((err) => console.error("[register] lead save failed", err));
+
+      const signInRes = await signIn("credentials", { email, password, redirect: false });
+      if (signInRes?.error) throw new Error("No pudimos iniciar sesión. Probá ingresar manualmente.");
+
+      // ya tenemos nombre/telefono, wizard solo pide dirección
+      router.push("/onboarding?skip=contact");
+      router.refresh();
+    } catch (err) {
+      console.error("[register] signup failed", err);
+      setError(err instanceof Error ? err.message : "No pudimos crear tu cuenta. Intentá de nuevo.");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
+  }
+
+  async function handleGoogleSignup() {
+    setError(null);
+    if (!acceptTerms) {
+      setError("Debés aceptar los términos y condiciones.");
+      return;
+    }
+    setGoogleLoading(true);
+    try {
+      // Google no da telefono/direccion/nombre restaurante, wizard completo los pide
+      router.push("/onboarding");
+    } catch (err) {
+      console.error("[register] google signup failed", err);
+      setError("No pudimos conectar con Google. Intentá de nuevo.");
+    } finally {
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -71,38 +123,54 @@ export default function RegisterPage() {
           <span className="text-sm font-semibold text-text-primary">Soporte</span>
         </a>
 
-        <form onSubmit={handleSubmit} className="w-full max-w-2xl">
+        <form onSubmit={handleSubmit} className="w-full max-w-lg">
           <h1 className="text-3xl font-bold leading-tight text-text-primary">
             Registrate en PlatoRest y empezá a recibir pedidos en minutos
           </h1>
 
-          <div className="space-y-4">
+          <button
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={googleLoading}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-3 font-semibold text-text-primary transition hover:bg-border/30 disabled:opacity-50"
+          >
+            <FcGoogle className="h-5 w-5" />
+            {googleLoading ? "Conectando..." : "Continuar con Google"}
+          </button>
+
+          <div className="my-4 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs text-text-secondary">o con tu email</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <div className="space-y-2.5">
             <div>
-              <label htmlFor="name" className="mb-1 block text-sm font-medium text-text-primary">
-                Nombre del local
+              <label htmlFor="restaurantName" className="mb-1 block text-sm font-medium text-text-primary">
+                Nombre del restaurante
               </label>
               <input
-                id="name"
+                id="restaurantName"
                 type="text"
                 required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Mi Parrilla"
+                value={restaurantName}
+                onChange={(e) => setRestaurantName(e.target.value)}
+                placeholder="La Parrilla de Juan"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-text-primary outline-none transition focus:border-primary"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-medium text-text-primary">
-                Email
+              <label htmlFor="fullName" className="mb-1 block text-sm font-medium text-text-primary">
+                Nombre completo
               </label>
               <input
-                id="email"
-                type="email"
+                id="fullName"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="juan@restaurante.com"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Juan Pérez"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-text-primary outline-none transition focus:border-primary"
               />
             </div>
@@ -120,9 +188,21 @@ export default function RegisterPage() {
                   buttonClassName: "!h-11 !rounded-l-lg !border-border !bg-background !px-3",
                 }}
               />
-              <p className="mt-1 text-xs text-text-secondary">
-                Usá el número del dueño o administrador del negocio. Te contactaremos ahí.
-              </p>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-text-primary">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="juan@restaurante.com"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-text-primary outline-none transition focus:border-primary"
+              />
             </div>
 
             <div>
@@ -150,29 +230,49 @@ export default function RegisterPage() {
                 <label htmlFor="password" className="mb-1 block text-sm font-medium text-text-primary">
                   Contraseña nueva
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-text-primary outline-none transition focus:border-primary"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Mínimo 6"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-text-primary outline-none transition focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showPassword ? <HiEyeSlash className="h-5 w-5" /> : <HiEye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-text-primary">
                   Confirmar
                 </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repetir"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-text-primary outline-none transition focus:border-primary"
-                />
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirmar contraseña"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-text-primary outline-none transition focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                    aria-label={showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    {showConfirmPassword ? <HiEyeSlash className="h-5 w-5" /> : <HiEye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -191,7 +291,7 @@ export default function RegisterPage() {
             {loading ? "Creando cuenta..." : "Crear cuenta"}
           </button>
 
-          <label className="mt-4 flex items-start justify-center gap-2 text-center text-sm text-text-secondary">
+          <label className="mt-4 flex items-start gap-2 text-sm text-text-secondary">
             <input
               type="checkbox"
               checked={acceptTerms}
@@ -222,8 +322,8 @@ export default function RegisterPage() {
 
       <div className="relative hidden md:block md:w-[40%]">
         <img
-          src="https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1200"
-          alt="Cocina de restaurante"
+          src="https://images.pexels.com/photos/2696064/pexels-photo-2696064.jpeg?auto=compress&cs=tinysrgb&w=1200"
+          alt="Chef preparando plato"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/50 to-primary/20" />

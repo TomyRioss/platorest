@@ -64,7 +64,7 @@ export default async function ClientesPage({
           {customers.map((c) => (
             <li key={c.id}>
               <Link
-                href={`/admin/clientes/${c.id}`}
+                href={`/dashboard/clientes/${c.id}`}
                 className="flex items-center justify-between p-4 hover:bg-surface"
               >
                 <div>

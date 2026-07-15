@@ -1,0 +1,85 @@
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+import { Smartphone, ChevronDown, Headset } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SidebarNav } from "./sidebar-nav";
+import { QrDownloadButton } from "./qr-download-button";
+import { Separator } from "@/components/ui/separator";
+import { prisma } from "@/lib/prisma";
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+  const restaurant = await prisma.restaurant.findFirst({
+    orderBy: { createdAt: "asc" },
+    select: { slug: true },
+  });
+  const host = (await headers()).get("host");
+  const menuUrl = restaurant ? `${host ? `https://${host}` : ""}/menu/${restaurant.slug}` : "";
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-surface">
+      <header className="z-10 flex h-14 shrink-0 items-center bg-primary shadow-md">
+        <div className="flex h-full w-56 shrink-0 items-center px-6">
+          <span className="text-xl font-bold tracking-tight text-white">
+            PLATOREST
+          </span>
+        </div>
+        <div className="flex flex-1 items-center justify-end gap-6 px-6">
+          <a
+            href="https://wa.me/5491171410652"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex cursor-pointer items-center gap-2 text-sm font-medium text-white hover:text-white/80"
+          >
+            <Headset className="h-5 w-5" />
+            Soporte
+          </a>
+
+          <div className="h-6 w-px bg-white/30" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex min-w-40 cursor-pointer items-center justify-between gap-1.5 text-sm font-medium text-white outline-none">
+              {session?.user?.name}
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" />
+          </DropdownMenu>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="flex w-56 shrink-0 flex-col bg-primary py-6">
+          <SidebarNav />
+
+          {restaurant && (
+            <div className="mt-auto border-t border-white/15 px-3 pt-4">
+              <div className="flex items-stretch overflow-hidden rounded-md bg-white">
+                <a
+                  href={`/menu/${restaurant.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
+                >
+                  <Smartphone className="h-6 w-6" />
+                  Vista previa
+                </a>
+                <Separator orientation="vertical" className="!h-auto bg-border" />
+                <QrDownloadButton menuUrl={menuUrl} slug={restaurant.slug} />
+              </div>
+            </div>
+          )}
+        </aside>
+
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+      </div>
+    </div>
+  );
+}

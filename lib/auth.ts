@@ -1,11 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  trustHost: true,
   pages: { signIn: "/login" },
   session: { strategy: "jwt" },
   providers: [
+    Google,
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
@@ -16,15 +22,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 
-        const adminEmail = process.env.ADMIN_EMAIL;
-        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
-        if (!adminEmail || !adminPasswordHash) return null;
-        if (email !== adminEmail) return null;
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user?.passwordHash) return null;
 
-        const valid = await bcrypt.compare(password, adminPasswordHash);
+        const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
-        return { id: "admin", email: adminEmail };
+        return { id: user.id, email: user.email, name: user.name };
       },
     }),
   ],

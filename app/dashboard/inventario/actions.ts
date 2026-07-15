@@ -22,7 +22,7 @@ export async function createProduct(restaurantId: string, input: ProductInput) {
       lowStockAlertAt: input.lowStockAlertAt,
     },
   });
-  revalidatePath("/admin/inventario");
+  revalidatePath("/dashboard/inventario");
 }
 
 export async function updateProduct(
@@ -33,5 +33,5 @@ export async function updateProduct(
     where: { id: productId },
     data: input,
   });
-  revalidatePath("/admin/inventario");
+  revalidatePath("/dashboard/inventario");
 }

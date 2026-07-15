@@ -16,9 +16,10 @@ export function AddToCartButton({
   return (
     <button
       onClick={() => addToCart(restaurantSlug, { productId, name, price, qty: 1 })}
-      className="shrink-0 rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover"
+      aria-label={`Agregar ${name}`}
+      className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-lg font-bold leading-none text-white shadow-sm hover:bg-primary-hover"
     >
-      Agregar
+      +
     </button>
   );
 }

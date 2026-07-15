@@ -13,6 +13,9 @@
 - Usar shadcn para componentes prefabricados generales.
 - Usar TailwindCSS para todo el CSS. Nunca CSS puro. Nunca tocar `global.css`.
 
+## Imágenes
+- Toda imagen del proyecto se guarda en Supabase Storage. Nunca persistir base64 en DB ni en `src` de imágenes. Subir a bucket, guardar solo la URL pública.
+
 ## Base de datos
 - Nunca tocar DB/Prisma sin permiso explícito del usuario en ese mensaje puntual (regla ya en CLAUDE.md global, se reafirma acá).
 - Para tareas de DB, usar skill `supabase/agent-skills` + MCP Supabase, modelo Sonnet.

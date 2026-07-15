@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { HiCheckCircle, HiChatBubbleLeftRight } from "react-icons/hi2";
+import { HiCheckCircle, HiChatBubbleLeftRight, HiEye, HiEyeSlash } from "react-icons/hi2";
 
 const BENEFITS = [
   "Crea tu menú digital en segundos",
@@ -27,6 +27,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,7 +45,7 @@ function LoginForm() {
         setError("Email o contraseña incorrectos.");
         return;
       }
-      router.push(searchParams.get("callbackUrl") ?? "/admin");
+      router.push(searchParams.get("callbackUrl") ?? "/dashboard");
       router.refresh();
     } catch (err) {
       console.error("login error:", err);
@@ -118,15 +119,25 @@ function LoginForm() {
               >
                 Contraseña
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-text-primary outline-none transition focus:border-primary"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-text-primary outline-none transition focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? <HiEyeSlash className="h-5 w-5" /> : <HiEye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -157,8 +168,8 @@ function LoginForm() {
 
       <div className="relative hidden md:block md:w-[40%]">
         <img
-          src="https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1200"
-          alt="Cocina de restaurante"
+          src="https://images.pexels.com/photos/2696064/pexels-photo-2696064.jpeg?auto=compress&cs=tinysrgb&w=1200"
+          alt="Chef preparando plato"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/50 to-primary/20" />
