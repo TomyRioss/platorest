@@ -3,6 +3,8 @@ export type CartItem = {
   name: string;
   price: number;
   qty: number;
+  modifiers?: { name: string; price: number }[];
+  key?: string;
 };
 
 export type Cart = {
@@ -30,7 +32,8 @@ export function addToCart(restaurantSlug: string, item: CartItem) {
       ? current
       : { restaurantSlug, items: [] };
 
-  const existing = cart.items.find((i) => i.productId === item.productId);
+  const key = item.key ?? item.productId;
+  const existing = cart.items.find((i) => (i.key ?? i.productId) === key);
   if (existing) {
     existing.qty += item.qty;
   } else {

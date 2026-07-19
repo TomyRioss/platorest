@@ -11,6 +11,22 @@ export async function geocodeAddress(
   return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
 }
 
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  const url = `https://photon.komoot.io/reverse?lon=${lng}&lat=${lat}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = (await res.json()) as {
+    features: {
+      properties: { name?: string; housenumber?: string; street?: string; city?: string; state?: string; country?: string };
+    }[];
+  };
+  const p = data.features[0]?.properties;
+  if (!p) return null;
+  const label = p.street ? `${p.street}${p.housenumber ? " " + p.housenumber : ""}` : (p.name ?? "");
+  const detail = [p.city, p.state, p.country].filter(Boolean).join(", ");
+  return [label, detail].filter(Boolean).join(", ");
+}
+
 export function haversineKm(
   a: { lat: number; lng: number },
   b: { lat: number; lng: number },

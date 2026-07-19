@@ -8,13 +8,46 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { updateRestaurant, uploadRestaurantAsset, updateSocialLink, createBranch, deleteBranch } from "../actions";
-import { FaTrashCan, FaPlus, FaPen } from "react-icons/fa6";
+import { updateRestaurant, uploadRestaurantAsset, updateSocialLink, createBranch, deleteBranch, resolveMapsShortLink, saveOpeningHours, type OpeningHoursInput } from "../actions";
+import { FaTrashCan, FaPlus, FaPen, FaClock } from "react-icons/fa6";
 import { LogoUploader } from "../logo-uploader";
 import { BannerUploader } from "../banner-uploader";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_META, type SocialPlatformValue } from "@/lib/social-platforms";
 import AddressAutocomplete from "@/app/onboarding/_components/AddressAutocomplete";
 import { parseGoogleMapsLink } from "@/lib/parse-maps-link";
+import { reverseGeocode } from "@/lib/geo";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const TIMEZONES = [
+  { value: "America/Argentina/Buenos_Aires", label: "Argentina (Buenos Aires)" },
+  { value: "America/Mexico_City", label: "México (Ciudad de México)" },
+  { value: "America/Bogota", label: "Colombia (Bogotá)" },
+  { value: "America/Santiago", label: "Chile (Santiago)" },
+  { value: "America/Lima", label: "Perú (Lima)" },
+  { value: "America/Montevideo", label: "Uruguay (Montevideo)" },
+];
+
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+}).concat("23:59");
+
+async function parseMapsLinkMaybeShort(link: string): Promise<{ lat: number; lng: number } | null> {
+  const direct = parseGoogleMapsLink(link);
+  if (direct) return direct;
+  const resolved = await resolveMapsShortLink(link).catch(() => null);
+  return resolved ? parseGoogleMapsLink(resolved) : null;
+}
 
 export function DesignClient({
   restaurantId,
@@ -25,6 +58,8 @@ export function DesignClient({
   businessSlug,
   socialLinks,
   branches,
+  openingHours,
+  timezone: initialTimezone,
 }: {
   restaurantId: string;
   restaurantName: string;
@@ -34,7 +69,59 @@ export function DesignClient({
   businessSlug: string;
   socialLinks: { platform: SocialPlatformValue; url: string }[];
   branches: { id: string; name: string; address: string | null; lat: number | null; lng: number | null }[];
+  openingHours: OpeningHoursInput[];
+  timezone: string;
 }) {
+  const DAY_LABELS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const [hoursModalOpen, setHoursModalOpen] = useState(false);
+  const [timezone, setTimezone] = useState(initialTimezone);
+  const [hoursByDay, setHoursByDay] = useState<{ open: string; close: string }[][]>(() => {
+    const byDay: { open: string; close: string }[][] = Array.from({ length: 7 }, () => []);
+    for (const h of openingHours) byDay[h.dayOfWeek]?.push({ open: h.openTime, close: h.closeTime });
+    return byDay;
+  });
+  const [hoursSaved, setHoursSaved] = useState(false);
+
+  function toggleDayOpen(day: number, isOpen: boolean) {
+    setHoursByDay((prev) => {
+      const next = [...prev];
+      next[day] = isOpen ? [{ open: "09:00", close: "18:00" }] : [];
+      return next;
+    });
+  }
+
+  function updateDaySlot(day: number, index: number, field: "open" | "close", value: string) {
+    setHoursByDay((prev) => {
+      const next = [...prev];
+      next[day] = next[day].map((slot, i) => (i === index ? { ...slot, [field]: value } : slot));
+      return next;
+    });
+  }
+
+  function addDaySlot(day: number) {
+    setHoursByDay((prev) => {
+      const next = [...prev];
+      next[day] = [...next[day], { open: "09:00", close: "18:00" }];
+      return next;
+    });
+  }
+
+  function removeDaySlot(day: number, index: number) {
+    setHoursByDay((prev) => {
+      const next = [...prev];
+      next[day] = next[day].filter((_, i) => i !== index);
+      return next;
+    });
+  }
+
+  function handleSaveHours() {
+    setHoursSaved(false);
+    const flat: OpeningHoursInput[] = hoursByDay.flatMap((slots, day) =>
+      slots.map((s) => ({ dayOfWeek: day, openTime: s.open, closeTime: s.close })),
+    );
+    run(() => saveOpeningHours(restaurantId, flat, timezone), () => setHoursSaved(true));
+  }
+
   const [name, setName] = useState(restaurantName);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(restaurantBanner);
@@ -71,29 +158,36 @@ export function DesignClient({
   }
 
   function handleApplyBranchMapsLink(branchId: string) {
-    const parsed = parseGoogleMapsLink(editMapsLink);
-    if (!parsed) {
-      setEditMapsLinkError("No se pudo leer la ubicación de ese link.");
-      return;
-    }
     setEditMapsLinkError("");
-    setBranchList((list) => list.map((b) => (b.id === branchId ? { ...b, lat: parsed.lat, lng: parsed.lng } : b)));
-    run(() => updateRestaurant(branchId, { lat: parsed.lat, lng: parsed.lng }));
+    startTransition(async () => {
+      const parsed = await parseMapsLinkMaybeShort(editMapsLink);
+      if (!parsed) {
+        setEditMapsLinkError("No se pudo leer la ubicación de ese link.");
+        return;
+      }
+      const address = (await reverseGeocode(parsed.lat, parsed.lng).catch(() => null)) ?? undefined;
+      setBranchList((list) =>
+        list.map((b) => (b.id === branchId ? { ...b, lat: parsed.lat, lng: parsed.lng, address: address ?? b.address } : b)),
+      );
+      await updateRestaurant(branchId, { lat: parsed.lat, lng: parsed.lng, ...(address ? { address } : {}) });
+    });
   }
 
-  function handleAddBranch() {
+  async function handleAddBranch() {
     if (!newBranchName.trim()) return;
     setError(null);
     setNewBranchMapsLinkError("");
 
     let coords = newBranchCoords;
+    let linkAddress: string | null = null;
     if (newBranchMapsLink.trim()) {
-      const parsed = parseGoogleMapsLink(newBranchMapsLink);
+      const parsed = await parseMapsLinkMaybeShort(newBranchMapsLink);
       if (!parsed) {
         setNewBranchMapsLinkError("No se pudo leer la ubicación de ese link.");
         return;
       }
       coords = parsed;
+      linkAddress = await reverseGeocode(parsed.lat, parsed.lng).catch(() => null);
     }
 
     startTransition(async () => {
@@ -104,7 +198,7 @@ export function DesignClient({
       }
       const branch = { id: result.branch.id, name: result.branch.name, address: result.branch.address, lat: result.branch.lat, lng: result.branch.lng };
       if (newBranchAddress.trim() || coords) {
-        if (newBranchAddress.trim()) branch.address = newBranchAddress;
+        branch.address = newBranchAddress.trim() || linkAddress || branch.address;
         if (coords) {
           branch.lat = coords.lat;
           branch.lng = coords.lng;
@@ -212,7 +306,7 @@ export function DesignClient({
 
   return (
     <main className="min-h-screen bg-surface p-4 md:p-6">
-      <div className="grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_375px]">
+      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-[1fr_375px] lg:items-stretch">
         <div className="w-full">
           <div className="mb-4">
             <div
@@ -279,6 +373,141 @@ export function DesignClient({
               })}
             </div>
           </div>
+
+          <div className="mt-4 rounded-xl border border-border bg-background p-4">
+            <p className="mb-3 text-sm font-semibold text-text-primary">Horarios de atención</p>
+            <button
+              type="button"
+              onClick={() => setHoursModalOpen(true)}
+              className="flex w-fit items-center gap-1.5 rounded-lg border border-primary px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary-light"
+            >
+              <FaClock className="h-3.5 w-3.5" />
+              Configurar mis horarios
+            </button>
+          </div>
+
+          <Dialog open={hoursModalOpen} onOpenChange={setHoursModalOpen}>
+            <DialogContent className="max-h-[85vh] overflow-x-hidden overflow-y-auto p-0 sm:max-w-lg">
+              <DialogHeader className="rounded-t-lg bg-primary p-4">
+                <DialogTitle className="text-white">Configurar mis horarios</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-4 px-4 pb-2">
+                <p className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <FaClock className="h-4 w-4" />
+                  Horario de atención
+                </p>
+
+                <div>
+                  <p className="mb-1 text-xs text-text-secondary">Zona horaria</p>
+                  <Select value={timezone} onValueChange={(v) => v && setTimezone(v)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIMEZONES.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {DAY_LABELS.map((label, day) => {
+                    const slots = hoursByDay[day];
+                    const isOpen = slots.length > 0;
+                    return (
+                      <div key={day} className="flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3">
+                          <Switch
+                            checked={isOpen}
+                            onCheckedChange={(checked) => toggleDayOpen(day, checked)}
+                          />
+                          <span className="w-20 shrink-0 text-sm font-medium text-text-primary">
+                            {isOpen ? "Abierto" : "Cerrado"}
+                          </span>
+                          <span className="w-24 shrink-0 text-sm text-text-secondary">{label}</span>
+                          {isOpen && slots[0] && (
+                            <div className="flex items-center gap-1.5">
+                              <Select value={slots[0].open} onValueChange={(v) => v && updateDaySlot(day, 0, "open", v)}>
+                                <SelectTrigger className="h-8 w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TIME_OPTIONS.map((t) => (
+                                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <span className="text-text-secondary">-</span>
+                              <Select value={slots[0].close} onValueChange={(v) => v && updateDaySlot(day, 0, "close", v)}>
+                                <SelectTrigger className="h-8 w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TIME_OPTIONS.map((t) => (
+                                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                        {isOpen && slots.slice(1).map((slot, i) => (
+                          <div key={i + 1} className="ml-[7.75rem] flex items-center gap-1.5">
+                            <Select value={slot.open} onValueChange={(v) => v && updateDaySlot(day, i + 1, "open", v)}>
+                              <SelectTrigger className="h-8 w-24">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TIME_OPTIONS.map((t) => (
+                                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <span className="text-text-secondary">-</span>
+                            <Select value={slot.close} onValueChange={(v) => v && updateDaySlot(day, i + 1, "close", v)}>
+                              <SelectTrigger className="h-8 w-24">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TIME_OPTIONS.map((t) => (
+                                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <button type="button" onClick={() => removeDaySlot(day, i + 1)} className="text-text-secondary hover:text-danger">
+                              <FaTrashCan className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                        {isOpen && (
+                          <button
+                            type="button"
+                            onClick={() => addDaySlot(day)}
+                            className="ml-[7.75rem] flex w-fit items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            <FaPlus className="h-2.5 w-2.5" />
+                            Agregar otro horario
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <DialogFooter className="p-4 pt-2">
+                <DialogClose
+                  onClick={handleSaveHours}
+                  disabled={isPending}
+                  className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {hoursSaved ? "¡Guardado!" : "Guardar y cerrar"}
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div className="mt-4 rounded-xl border border-border bg-background p-4">
             <p className="mb-3 text-sm font-semibold text-text-primary">Sucursales</p>

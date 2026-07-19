@@ -13,6 +13,7 @@ export default async function DesignPage() {
           restaurants: { orderBy: { createdAt: "asc" } },
         },
       },
+      openingHours: { orderBy: [{ dayOfWeek: "asc" }, { sortOrder: "asc" }] },
     },
   });
   if (!restaurant) {
@@ -39,6 +40,13 @@ export default async function DesignPage() {
         lat: r.lat,
         lng: r.lng,
       }))}
+      openingHours={restaurant.openingHours.map((h) => ({
+        id: h.id,
+        dayOfWeek: h.dayOfWeek,
+        openTime: h.openTime,
+        closeTime: h.closeTime,
+      }))}
+      timezone={restaurant.timezone}
     />
   );
 }

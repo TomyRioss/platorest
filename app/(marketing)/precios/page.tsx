@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,10 @@ const INCLUDED = [
 ];
 
 export default function PreciosPage() {
+  if (process.env.NEXT_PUBLIC_SHOW_PRICING !== "true") {
+    notFound();
+  }
+
   return (
     <main className="px-6 py-32">
       <div className="mx-auto max-w-6xl">

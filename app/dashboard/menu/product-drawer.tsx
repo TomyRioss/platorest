@@ -15,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ProductImageUploader } from "./product-image-uploader";
 import type { VariantInput } from "./actions";
+import { ModifierGroupsEditor, type ModifierGroupData } from "./modifier-groups-editor";
 
 function generateSku(): string {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -24,7 +25,7 @@ function generateSku(): string {
 }
 
 type Variant = { id: string; name: string; price: number; costPrice: number | null; packagingPrice: number | null; sku: string | null; isDefault: boolean };
-type Product = { id: string; name: string; description: string | null; active: boolean; price: number; imageUrl: string | null; variants: Variant[] };
+type Product = { id: string; name: string; description: string | null; active: boolean; price: number; imageUrl: string | null; variants: Variant[]; modifierGroups: ModifierGroupData[] };
 
 export type DrawerState =
   | { mode: "create"; categoryId: string }
@@ -213,12 +214,14 @@ export function ProductDrawer({
   onClose,
   onSave,
   onImageChange,
+  onModifiersSaved,
 }: {
   state: DrawerState;
   isPending: boolean;
   onClose: () => void;
   onSave: (input: { productId?: string; categoryId: string; name: string; description: string; variants: VariantInput[]; imageDataUrl?: string }) => void;
   onImageChange: (productId: string, dataUrl: string) => void;
+  onModifiersSaved: () => void;
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -455,6 +458,18 @@ export function ProductDrawer({
               </div>
             )}
           </div>
+
+          <Separator />
+
+          {state?.mode === "edit" ? (
+            <ModifierGroupsEditor
+              productId={state.product.id}
+              groups={state.product.modifierGroups}
+              onSaved={onModifiersSaved}
+            />
+          ) : (
+            <p className="text-sm text-text-secondary">Guardá el producto para poder agregar modificadores.</p>
+          )}
         </div>
 
         <Separator />

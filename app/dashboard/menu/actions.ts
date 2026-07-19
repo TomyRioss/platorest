@@ -8,6 +8,16 @@ import { slugify } from "@/lib/slug";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
+// ponytail: short goo.gl/maps.app.goo.gl links redirect before revealing lat/lng; resolve server-side (client fetch would hit CORS)
+export async function resolveMapsShortLink(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { redirect: "follow" });
+    return res.url || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function updateSocialLink(
   businessId: string,
   platform: SocialPlatform,
@@ -26,7 +36,7 @@ export async function updateSocialLink(
   } catch {
     return { ok: false, error: "No se pudo guardar la red social." };
   }
-  revalidatePath("/dashboard/menu/diseno");
+  revalidatePath("/dashboard/menu/landing");
   return { ok: true };
 }
 
@@ -39,6 +49,17 @@ export async function createCategory(
     await prisma.category.create({ data: { restaurantId, name: name.trim() } });
   } catch {
     return { ok: false, error: "Error al crear categoría." };
+  }
+  revalidatePath("/dashboard/menu");
+  return { ok: true };
+}
+
+export async function renameCategory(categoryId: string, name: string): Promise<ActionResult> {
+  if (!name.trim()) return { ok: false, error: "Nombre requerido." };
+  try {
+    await prisma.category.update({ where: { id: categoryId }, data: { name: name.trim() } });
+  } catch {
+    return { ok: false, error: "No se pudo renombrar." };
   }
   revalidatePath("/dashboard/menu");
   return { ok: true };
@@ -60,6 +81,8 @@ export async function reorderCategories(categoryIds: string[]): Promise<ActionRe
 
 export async function deleteCategory(categoryId: string): Promise<ActionResult> {
   try {
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    if (category?.isFeatured) return { ok: false, error: "No se puede borrar la categoría destacada." };
     await prisma.category.delete({ where: { id: categoryId } });
   } catch {
     return { ok: false, error: "No se pudo borrar (tiene productos asociados)." };
@@ -150,6 +173,75 @@ export async function saveProduct(input: SaveProductInput): Promise<SaveProductR
   } catch {
     return { ok: false, error: "No se pudo guardar el producto." };
   }
+}
+
+export type ModifierInput = { id?: string; name: string; price: number };
+export type ModifierGroupInput = {
+  id?: string;
+  name: string;
+  required: boolean;
+  multiple: boolean;
+  modifiers: ModifierInput[];
+};
+
+export async function saveModifierGroup(
+  productId: string,
+  input: ModifierGroupInput,
+): Promise<ActionResult> {
+  if (!input.name.trim()) return { ok: false, error: "Nombre requerido." };
+  try {
+    await prisma.$transaction(async (tx) => {
+      let groupId = input.id;
+      if (groupId) {
+        await tx.modifierGroup.update({
+          where: { id: groupId },
+          data: { name: input.name.trim(), required: input.required, multiple: input.multiple },
+        });
+        const existing = await tx.modifier.findMany({ where: { modifierGroupId: groupId } });
+        const keepIds = new Set(input.modifiers.filter((m) => m.id).map((m) => m.id));
+        const toDelete = existing.filter((m) => !keepIds.has(m.id));
+        if (toDelete.length > 0) {
+          await tx.modifier.deleteMany({ where: { id: { in: toDelete.map((m) => m.id) } } });
+        }
+      } else {
+        const count = await tx.modifierGroup.count({ where: { productId } });
+        const group = await tx.modifierGroup.create({
+          data: {
+            productId,
+            name: input.name.trim(),
+            required: input.required,
+            multiple: input.multiple,
+            sortOrder: count,
+          },
+        });
+        groupId = group.id;
+      }
+
+      for (let i = 0; i < input.modifiers.length; i++) {
+        const m = input.modifiers[i];
+        const data = { name: m.name.trim() || "Opción", price: m.price, sortOrder: i };
+        if (m.id) {
+          await tx.modifier.update({ where: { id: m.id }, data });
+        } else {
+          await tx.modifier.create({ data: { ...data, modifierGroupId: groupId! } });
+        }
+      }
+    });
+  } catch {
+    return { ok: false, error: "No se pudo guardar el grupo de modificadores." };
+  }
+  revalidatePath("/dashboard/menu");
+  return { ok: true };
+}
+
+export async function deleteModifierGroup(groupId: string): Promise<ActionResult> {
+  try {
+    await prisma.modifierGroup.delete({ where: { id: groupId } });
+  } catch {
+    return { ok: false, error: "No se pudo borrar el grupo." };
+  }
+  revalidatePath("/dashboard/menu");
+  return { ok: true };
 }
 
 export async function duplicateProduct(productId: string): Promise<ActionResult> {
@@ -264,6 +356,35 @@ export async function updateRestaurant(
     return { ok: false, error: "No se pudo actualizar el restaurante." };
   }
   revalidatePath("/dashboard/menu");
+  return { ok: true };
+}
+
+export type OpeningHoursInput = { dayOfWeek: number; openTime: string; closeTime: string };
+
+export async function saveOpeningHours(
+  restaurantId: string,
+  hours: OpeningHoursInput[],
+  timezone: string,
+): Promise<ActionResult> {
+  for (const h of hours) {
+    if (!/^\d{2}:\d{2}$/.test(h.openTime) || !/^\d{2}:\d{2}$/.test(h.closeTime)) {
+      return { ok: false, error: "Horario inválido." };
+    }
+  }
+  try {
+    await prisma.$transaction([
+      prisma.restaurant.update({ where: { id: restaurantId }, data: { timezone } }),
+      prisma.openingHours.deleteMany({ where: { restaurantId } }),
+      ...hours.map((h, index) =>
+        prisma.openingHours.create({
+          data: { restaurantId, dayOfWeek: h.dayOfWeek, openTime: h.openTime, closeTime: h.closeTime, sortOrder: index },
+        }),
+      ),
+    ]);
+  } catch {
+    return { ok: false, error: "No se pudieron guardar los horarios." };
+  }
+  revalidatePath("/dashboard/menu/landing");
   return { ok: true };
 }
 

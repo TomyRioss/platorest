@@ -140,11 +140,11 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="absolute -bottom-1 left-0 right-0 h-24 rounded-t-[100%] bg-background md:h-32" />
+        <div className="absolute -bottom-1 left-0 right-0 h-24 rounded-t-[100%] bg-surface md:h-32" />
       </header>
 
 
-      <section className="border-t border-border bg-surface px-6 py-20">
+      <section className="bg-surface px-6 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
             <h2 className="text-3xl font-bold text-primary md:text-4xl">
@@ -184,48 +184,50 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="px-6 py-32">
-        <div className="mx-auto max-w-6xl">
-          <Card className="relative overflow-hidden rounded-3xl border-2 border-primary p-16 shadow-xl md:p-20">
-            <CardContent className="grid grid-cols-1 items-center gap-12 p-0 lg:grid-cols-2">
-              <div>
-                <h2 className="text-4xl font-bold text-primary underline decoration-primary/40 underline-offset-8 sm:text-5xl">
-                  Plan fundadores
-                </h2>
-                <ul className="mt-8 space-y-4 text-xl">
-                  <li className="flex items-start gap-3 text-text-primary">
-                    <span className="mt-1 text-primary">✓</span>
-                    <span>Soporte 24/7 feriados y fines de semana</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-primary">
-                    <span className="mt-1 text-primary">✓</span>
-                    <span>Soporte Presencial CABA y GBA</span>
-                  </li>
-                  <li className="flex items-start gap-3 text-text-primary">
-                    <span className="mt-1 text-primary">✓</span>
-                    <span>Todas las funcionalidades actuales y futuras</span>
-                  </li>
-                </ul>
-                <p className="mt-6 text-base text-text-secondary">
-                  Tiempo limitado, solo para nuestros primeros 100 clientes.
-                </p>
-              </div>
+      {process.env.NEXT_PUBLIC_SHOW_PRICING === "true" && (
+        <section className="px-6 py-32">
+          <div className="mx-auto max-w-6xl">
+            <Card className="relative overflow-hidden rounded-3xl border-2 border-primary p-16 shadow-xl md:p-20">
+              <CardContent className="grid grid-cols-1 items-center gap-12 p-0 lg:grid-cols-2">
+                <div>
+                  <h2 className="text-4xl font-bold text-primary underline decoration-primary/40 underline-offset-8 sm:text-5xl">
+                    Plan fundadores
+                  </h2>
+                  <ul className="mt-8 space-y-4 text-xl">
+                    <li className="flex items-start gap-3 text-text-primary">
+                      <span className="mt-1 text-primary">✓</span>
+                      <span>Soporte 24/7 feriados y fines de semana</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-text-primary">
+                      <span className="mt-1 text-primary">✓</span>
+                      <span>Soporte Presencial CABA y GBA</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-text-primary">
+                      <span className="mt-1 text-primary">✓</span>
+                      <span>Todas las funcionalidades actuales y futuras</span>
+                    </li>
+                  </ul>
+                  <p className="mt-6 text-base text-text-secondary">
+                    Tiempo limitado, solo para nuestros primeros 100 clientes.
+                  </p>
+                </div>
 
-              <div className="text-center">
-                <p className="text-6xl font-bold text-primary">
-                  $40.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
-                </p>
-                <Link
-                  href="/precios"
-                  className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}
-                >
-                  PROBALO GRATIS
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+                <div className="text-center">
+                  <p className="text-6xl font-bold text-primary">
+                    $40.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
+                  </p>
+                  <Link
+                    href="/precios"
+                    className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}
+                  >
+                    PROBALO GRATIS
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
 
       <section id="contacto" className="bg-primary px-6 py-24 text-white scroll-mt-20">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">

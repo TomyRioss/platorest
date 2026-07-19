@@ -5,7 +5,9 @@ const FOOTER_SECTIONS = [
   {
     title: "Producto",
     links: [
-      { label: "Precios", href: "/precios" },
+      ...(process.env.NEXT_PUBLIC_SHOW_PRICING === "true"
+        ? [{ label: "Precios", href: "/precios" }]
+        : []),
       { label: "Demo gratis", href: "/menu/demo" },
     ],
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import type { Map as LeafletMap } from "leaflet";
 import L from "leaflet";
@@ -18,7 +18,9 @@ type GeoBranch = Branch & { lat: number; lng: number };
 
 function FlyTo({ target }: { target: [number, number] | null }) {
   const map = useMap();
-  if (target) map.flyTo(target, 16, { duration: 0.8 });
+  useEffect(() => {
+    if (target) map.flyTo(target, 16, { duration: 0.8 });
+  }, [target, map]);
   return null;
 }
 

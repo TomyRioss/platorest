@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ensureFeaturedCategory } from "@/lib/featured-category";
 import { MenuClient } from "./menu-client";
 
 export const dynamic = "force-dynamic";
@@ -15,13 +16,21 @@ export default async function MenuPage() {
     );
   }
 
+  await ensureFeaturedCategory(restaurant.id);
+
   const categories = await prisma.category.findMany({
     where: { restaurantId: restaurant.id },
     orderBy: { sortOrder: "asc" },
     include: {
       products: {
         orderBy: { name: "asc" },
-        include: { variants: true },
+        include: {
+          variants: true,
+          modifierGroups: {
+            orderBy: { sortOrder: "asc" },
+            include: { modifiers: { orderBy: { sortOrder: "asc" } } },
+          },
+        },
       },
     },
   });
@@ -36,6 +45,7 @@ export default async function MenuPage() {
       categories={categories.map((c) => ({
         id: c.id,
         name: c.name,
+        isFeatured: c.isFeatured,
         products: c.products.map((p) => ({
           id: p.id,
           name: p.name,
@@ -51,6 +61,13 @@ export default async function MenuPage() {
             packagingPrice: v.packagingPrice === null ? null : Number(v.packagingPrice),
             sku: v.sku,
             isDefault: v.isDefault,
+          })),
+          modifierGroups: p.modifierGroups.map((g) => ({
+            id: g.id,
+            name: g.name,
+            required: g.required,
+            multiple: g.multiple,
+            modifiers: g.modifiers.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })),
           })),
         })),
       }))}

@@ -35,6 +35,7 @@ import {
 import {
   createCategory,
   deleteCategory,
+  renameCategory,
   reorderCategories,
   saveProduct,
   toggleProductActive,
@@ -51,10 +52,11 @@ import { LogoUploader } from "./logo-uploader";
 import { BannerUploader } from "./banner-uploader";
 import { ProductImageUploader } from "./product-image-uploader";
 import { ProductDrawer, type DrawerState } from "./product-drawer";
+import type { ModifierGroupData } from "./modifier-groups-editor";
 
 type Variant = { id: string; name: string; price: number; costPrice: number | null; packagingPrice: number | null; sku: string | null; isDefault: boolean };
-type Product = { id: string; name: string; description: string | null; active: boolean; price: number; imageUrl: string | null; variants: Variant[] };
-type Category = { id: string; name: string; products: Product[] };
+type Product = { id: string; name: string; description: string | null; active: boolean; price: number; imageUrl: string | null; variants: Variant[]; modifierGroups: ModifierGroupData[] };
+type Category = { id: string; name: string; isFeatured: boolean; products: Product[] };
 
 export function MenuClient({
   restaurantId,
@@ -72,8 +74,10 @@ export function MenuClient({
   categories: Category[];
 }) {
   const router = useRouter();
-  const [categories, setCategories] = useState(initialCategories);
-  useEffect(() => setCategories(initialCategories), [initialCategories]);
+  const pinFeatured = (list: Category[]) =>
+    [...list].sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured));
+  const [categories, setCategories] = useState(pinFeatured(initialCategories));
+  useEffect(() => setCategories(pinFeatured(initialCategories)), [initialCategories]);
   const [name, setName] = useState(restaurantName);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(restaurantBanner);
@@ -108,9 +112,18 @@ export function MenuClient({
   function handleCreateCategory() {
     const name = newCategoryName;
     run(() => createCategory(restaurantId, name), () => {
-      setCategories((prev) => [...prev, { id: crypto.randomUUID(), name: name.trim(), products: [] }]);
+      setCategories((prev) => pinFeatured([...prev, { id: crypto.randomUUID(), name: name.trim(), isFeatured: false, products: [] }]));
       setNewCategoryName("");
       setIsAddingCategory(false);
+    });
+  }
+
+  function handleRenameCategory(categoryId: string, name: string) {
+    if (!name.trim()) return;
+    run(() => renameCategory(categoryId, name), () => {
+      setCategories((prev) =>
+        prev.map((c) => (c.id === categoryId ? { ...c, name: name.trim() } : c)),
+      );
     });
   }
 
@@ -143,7 +156,7 @@ export function MenuClient({
     const fromIndex = categories.findIndex((c) => c.id === active.id);
     const toIndex = categories.findIndex((c) => c.id === over.id);
     if (fromIndex === -1 || toIndex === -1) return;
-    const next = arrayMove(categories, fromIndex, toIndex);
+    const next = pinFeatured(arrayMove(categories, fromIndex, toIndex));
     setCategories(next);
     run(() => reorderCategories(next.map((c) => c.id)));
   }
@@ -443,10 +456,20 @@ export function MenuClient({
             <SortableCategoryRow key={category.id} categoryId={category.id}>
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-text-secondary">Nombre de categoría</p>
-                  <p className="truncate border-b border-border pb-0.5 font-medium text-text-primary">
-                    {category.name}
+                  <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                    Nombre de categoría
+                    {category.isFeatured && (
+                      <span className="rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">
+                        Destacada
+                      </span>
+                    )}
                   </p>
+                  <input
+                    defaultValue={category.name}
+                    onBlur={(e) => handleRenameCategory(category.id, e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                    className="w-full truncate border-b border-border bg-transparent pb-0.5 font-medium text-text-primary outline-none focus:border-primary"
+                  />
                 </div>
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-medium text-text-secondary">
                   {category.products.length}
@@ -457,16 +480,18 @@ export function MenuClient({
                 >
                   + Producto
                 </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className="shrink-0 rounded-full p-1 text-text-secondary outline-none hover:bg-background">
-                    <MoreVertical className="h-4 w-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleDeleteCategory(category.id)}>
-                      Borrar categoría
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {!category.isFeatured && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="shrink-0 rounded-full p-1 text-text-secondary outline-none hover:bg-background">
+                      <MoreVertical className="h-4 w-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleDeleteCategory(category.id)}>
+                        Borrar categoría
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 <button
                   onClick={() => toggleCategoryCollapsed(category.id)}
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-text-secondary hover:text-primary"
@@ -484,9 +509,16 @@ export function MenuClient({
               <ul className="divide-y divide-border">
                 {category.products.map((product) => (
                   <li key={product.id} className="flex items-center gap-2 py-2">
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setDrawerState({ mode: "edit", product, categoryId: category.id })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setDrawerState({ mode: "edit", product, categoryId: category.id });
+                        }
+                      }}
                       className="flex min-w-0 items-center gap-3 text-left"
                     >
                       <ProductImageUploader
@@ -501,7 +533,7 @@ export function MenuClient({
                           <p className="text-xs font-medium text-danger">Agotado</p>
                         )}
                       </div>
-                    </button>
+                    </div>
                     <Separator orientation="vertical" className="h-4 !w-px !self-center" />
                     <div className="flex shrink-0 items-center gap-3">
                       <p className="text-sm font-medium text-text-primary">${product.price.toLocaleString("es-AR")}</p>
@@ -639,6 +671,7 @@ export function MenuClient({
         onClose={() => setDrawerState(null)}
         onSave={handleSaveProduct}
         onImageChange={handleProductImageChange}
+        onModifiersSaved={() => router.refresh()}
       />
     </main>
   );

@@ -17,6 +17,23 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+
+  const membership = session?.user?.id
+    ? await prisma.membership.findFirst({
+        where: { userId: session.user.id, role: "OWNER" },
+        include: { business: true },
+        orderBy: { id: "asc" },
+      })
+    : null;
+
+  const business = membership?.business;
+
+  let trialDaysLeft: number | null = null;
+  if (business?.trialEndsAt) {
+    const diff = new Date(business.trialEndsAt).getTime() - Date.now();
+    trialDaysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+
   const restaurant = await prisma.restaurant.findFirst({
     orderBy: { createdAt: "asc" },
     select: { slug: true },
@@ -26,11 +43,20 @@ export default async function AdminLayout({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface">
-      <header className="z-10 flex h-14 shrink-0 items-center bg-primary shadow-md">
-        <div className="flex h-full w-56 shrink-0 items-center px-6">
-          <span className="text-xl font-bold tracking-tight text-white">
-            PLATOREST
-          </span>
+      <header className="z-10 flex h-16 shrink-0 items-center bg-primary shadow-md">
+        <div className="flex h-full w-56 shrink-0 flex-col justify-center px-5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xl font-medium tracking-normal text-white">
+              PlatoRest
+            </span>
+          </div>
+          {trialDaysLeft !== null && (
+            <span className="mt-0.5 text-[11px] font-semibold text-yellow-300">
+              {trialDaysLeft > 0
+                ? `⏳ ${trialDaysLeft} días de prueba`
+                : "⚠️ Trial expirado"}
+            </span>
+          )}
         </div>
         <div className="flex flex-1 items-center justify-end gap-6 px-6">
           <a

@@ -4,19 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UtensilsCrossed, Boxes, ChevronDown } from "lucide-react";
+import { isDev } from "@/lib/feature-scope";
 
-const NAV_GROUPS = [
+type NavItem = { href: string; label: string };
+type NavGroup = { label: string; icon: React.ComponentType<{ className?: string }>; items: NavItem[]; scope?: "extra" };
+
+const NAV_GROUPS: NavGroup[] = [
   {
     label: "Menú digital",
     icon: UtensilsCrossed,
     items: [
       { href: "/dashboard/menu", label: "Menú de productos" },
-      { href: "/dashboard/menu/diseno", label: "Bienvenida y diseño" },
+      { href: "/dashboard/menu/landing", label: "Bienvenida y diseño" },
     ],
+
   },
   {
     label: "Inventario",
     icon: Boxes,
+    scope: "extra",
     items: [
       { href: "/dashboard/inventario", label: "Inventario" },
       { href: "/dashboard/inventario/carta", label: "Carta" },
@@ -26,8 +32,9 @@ const NAV_GROUPS = [
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const visibleGroups = NAV_GROUPS.filter((g) => g.scope !== "extra" || isDev());
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
-    const active = NAV_GROUPS.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
+    const active = visibleGroups.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
     return new Set(active ? [active.label] : []);
   });
 
@@ -49,8 +56,8 @@ export function SidebarNav() {
   }, [openGroups]);
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 px-3">
-      {NAV_GROUPS.map((group) => {
+    <nav className="flex flex-1 flex-col gap-2 px-2">
+      {visibleGroups.map((group) => {
         const Icon = group.icon;
         const isOpen = openGroups.has(group.label);
         return (
@@ -69,12 +76,10 @@ export function SidebarNav() {
             >
               <Icon className="h-4.5 w-4.5" />
               <span className="flex-1 text-left">{group.label}</span>
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-              />
+              <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
             </button>
             {isOpen && (
-              <div className="relative mt-1 ml-6 flex flex-col gap-1 border-l border-white/30 pl-2">
+              <div className="relative mt-1 ml-6 flex flex-col gap-1 border-l border-white/20 pl-2">
                 {group.items.map(({ href, label }) => {
                   const active = pathname === href;
                   return (

@@ -15,7 +15,9 @@ const FUNCTIONALITIES: { href: string; label: string; icon: IconType }[] = [
 ];
 
 const NAV_LINKS = [
-  { href: "/precios", label: "Precios" },
+  ...(process.env.NEXT_PUBLIC_SHOW_PRICING === "true"
+    ? [{ href: "/precios", label: "Precios" }]
+    : []),
 ];
 
 function FunctionalityDropdown({ mobile = false }: { mobile?: boolean }) {
@@ -112,7 +114,7 @@ export default function TopNavBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="mx-auto grid max-w-6xl grid-cols-2 items-center px-6 py-4 md:grid-cols-[1fr_auto_1fr]">
-        <Link href="/" className="text-3xl font-bold tracking-tight text-primary">
+        <Link href="/" className="flex items-center gap-1.5 text-3xl font-medium tracking-normal text-primary">
           PlatoRest
         </Link>
 

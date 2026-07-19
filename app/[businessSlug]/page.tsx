@@ -22,6 +22,7 @@ export default async function BusinessLinkPage({
   if (!business) notFound();
 
   const mainRestaurant = business.restaurants[0];
+  const whatsapp = business.socialLinks.find((l) => l.platform === "WHATSAPP");
 
   return (
     <main className="min-h-screen w-full bg-background">
@@ -85,35 +86,39 @@ export default async function BusinessLinkPage({
             {mainRestaurant && (
               <a
                 href={`/menu/${mainRestaurant.slug}`}
-                className="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-5 text-center font-semibold text-white shadow-sm hover:opacity-90"
+                className="flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-6 text-center text-lg font-semibold text-white shadow-sm hover:opacity-90"
               >
-                <HiOutlineTruck className="h-5 w-5" />
+                <HiOutlineTruck className="h-6 w-6" />
                 Delivery
               </a>
             )}
             {mainRestaurant && (
               <a
                 href={`/menu/${mainRestaurant.slug}`}
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-5 text-center font-semibold text-text-primary shadow-sm hover:bg-surface"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-6 text-center text-lg font-semibold text-text-primary shadow-sm hover:bg-surface"
               >
-                <HiOutlineBuildingStorefront className="h-5 w-5" />
+                <HiOutlineBuildingStorefront className="h-6 w-6" />
                 Menú
               </a>
             )}
             <a
               href={`/${businessSlug}/sucursales`}
-              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-5 text-center font-semibold text-text-primary shadow-sm hover:bg-surface"
+              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-6 text-center text-lg font-semibold text-text-primary shadow-sm hover:bg-surface"
             >
-              <HiOutlineMapPin className="h-5 w-5" />
+              <HiOutlineMapPin className="h-6 w-6" />
               Sucursales
             </a>
-            <a
-              href="#contacto"
-              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-5 py-5 text-center font-semibold text-text-primary shadow-sm hover:bg-surface"
-            >
-              <HiOutlinePhone className="h-5 w-5" />
-              Contacto
-            </a>
+            {whatsapp && (
+              <a
+                href={`https://wa.me/${whatsapp.url.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-6 py-6 text-center text-lg font-semibold text-text-primary shadow-sm hover:bg-surface"
+              >
+                <HiOutlinePhone className="h-6 w-6" />
+                Contacto
+              </a>
+            )}
           </div>
         </div>
       </div>
