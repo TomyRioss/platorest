@@ -28,7 +28,11 @@ export default async function MenuPage() {
           variants: true,
           modifierGroups: {
             orderBy: { sortOrder: "asc" },
-            include: { modifiers: { orderBy: { sortOrder: "asc" } } },
+            include: {
+              modifierGroup: {
+                include: { modifiers: { orderBy: { sortOrder: "asc" } } },
+              },
+            },
           },
         },
       },
@@ -62,12 +66,12 @@ export default async function MenuPage() {
             sku: v.sku,
             isDefault: v.isDefault,
           })),
-          modifierGroups: p.modifierGroups.map((g) => ({
-            id: g.id,
-            name: g.name,
-            required: g.required,
-            multiple: g.multiple,
-            modifiers: g.modifiers.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })),
+          modifierGroups: p.modifierGroups.map((pmg) => ({
+            id: pmg.modifierGroup.id,
+            name: pmg.modifierGroup.name,
+            required: pmg.modifierGroup.required,
+            multiple: pmg.modifierGroup.multiple,
+            modifiers: pmg.modifierGroup.modifiers.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })),
           })),
         })),
       }))}

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { HiOutlineShoppingBag } from "react-icons/hi2";
 import { getCart } from "@/lib/cart";
+import posthog from "posthog-js";
 
 export function CartBar({ restaurantSlug }: { restaurantSlug: string }) {
   const [count, setCount] = useState(0);
@@ -25,11 +27,13 @@ export function CartBar({ restaurantSlug }: { restaurantSlug: string }) {
 
   return (
     <Link
-      href="/checkout"
-      className="fixed inset-x-4 bottom-4 z-10 mx-auto flex max-w-2xl items-center justify-between rounded-lg bg-primary px-4 py-3 font-medium text-white shadow-lg hover:bg-primary-hover"
+      href={`/menu/${restaurantSlug}/checkout`}
+      onClick={() => posthog.capture("checkout_started", { restaurant_slug: restaurantSlug, item_count: count })}
+      aria-label={`Ver pedido, ${count} producto${count !== 1 ? "s" : ""}`}
+      className="fixed inset-x-4 bottom-4 z-10 mx-auto flex max-w-2xl items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 font-medium text-white shadow-lg hover:bg-primary-hover"
     >
-      <span>{count} producto{count !== 1 ? "s" : ""} en el carrito</span>
-      <span>Ver pedido →</span>
+      <HiOutlineShoppingBag className="h-5 w-5" />
+      Ver tú pedido →
     </Link>
   );
 }

@@ -1,10 +1,42 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { HiDeviceTablet, HiBolt, HiLanguage, HiPhoto, HiCreditCard, HiCalendarDays } from "react-icons/hi2";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import {
+  FeatureHero,
+  StatsBand,
+  FeaturesGrid,
+  FaqSection,
+  CtaSection,
+  type Feature,
+} from "../../_components/sections";
+import {
+  SITE,
+  buildMetadata,
+  faqJsonLd,
+  breadcrumbJsonLd,
+  serviceJsonLd,
+  webPageJsonLd,
+} from "@/lib/seo";
 
-const FEATURES = [
+const DESCRIPTION =
+  "Menú digital para restaurantes en Buenos Aires y toda Argentina. Carta QR sin comisiones, actualización de precios en tiempo real, pedidos online y reservas desde el menú. Pedí tu demo gratis.";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Menú Digital para Restaurantes con QR",
+  description: DESCRIPTION,
+  path: "/funcionalidades/menu-digital",
+  keywords: [
+    "menú digital",
+    "menú digital para restaurantes",
+    "QR para restaurantes",
+    "carta digital para restaurantes",
+    "carta QR",
+    "menú QR sin comisiones",
+    "menú digital Buenos Aires",
+    "menú digital Argentina",
+  ],
+});
+
+const FEATURES: Feature[] = [
   {
     icon: HiBolt,
     title: "Actualización en tiempo real",
@@ -43,105 +75,94 @@ const STATS = [
   { value: "< 30s", label: "Actualizar un precio" },
 ];
 
+const FAQS = [
+  {
+    question: "¿Qué es un menú digital para restaurantes?",
+    answer:
+      "Es la versión online de tu carta: tus clientes la abren desde el celular escaneando un código QR o con un link, y siempre ven precios y platos actualizados. Con PlatoRest además pueden pedir, pagar y reservar desde el mismo menú.",
+  },
+  {
+    question: "¿Cómo funciona el código QR para restaurantes?",
+    answer:
+      "Pegás un QR personalizado en cada mesa. El cliente lo escanea con la cámara de su celular, sin descargar ninguna app, y accede a tu carta digital al instante. Cualquier cambio que hagas se refleja en todos los QR al momento, sin reimprimir nada.",
+  },
+  {
+    question: "¿El menú digital sirve para restaurantes de Buenos Aires y toda Argentina?",
+    answer:
+      "Sí. PlatoRest funciona en CABA, GBA y cualquier provincia de Argentina. Es 100% online, acepta pagos con MercadoPago y ofrece soporte en español, con atención presencial en CABA y GBA.",
+  },
+  {
+    question: "¿Tengo que pagar comisiones por los pedidos online?",
+    answer:
+      "No. A diferencia de las apps de delivery, PlatoRest no cobra comisiones por pedido. El menú digital es parte de tu sistema gastronómico y los pedidos que recibís son 100% tuyos.",
+  },
+  {
+    question: "¿Puedo vincular el menú digital a mi ficha de Google Maps?",
+    answer:
+      "Sí. Tu menú digital tiene una URL propia que podés agregar a tu ficha de Google Business Profile, así los clientes que te buscan en Google Maps ven tu carta actualizada antes de visitarte.",
+  },
+];
+
 export default function MenuDigitalPage() {
   return (
     <main>
-      <section className="relative overflow-hidden bg-orange-50">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-28">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-              Funcionalidad · Menú Digital
-            </div>
-            <h1 className="mt-5 text-balance text-4xl font-bold leading-[1.1] tracking-tight text-text-primary sm:text-5xl md:text-6xl">
-              Tu carta, viva en cada pantalla.
-            </h1>
-            <p className="mt-6 max-w-lg text-lg text-text-secondary">
-              Un menú digital que se actualiza solo, se ve increíble y se
-              encuentra en Google. Tus clientes piden antes de sentarse y vos
-              ya tenés el pedido listo.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="mailto:hola@platorest.com"
-                className={cn(buttonVariants({ size: "lg" }), "h-auto rounded-lg px-8 py-4 text-base shadow-lg")}
-              >
-                Probar menú demo
-              </Link>
-              <Link
-                href="/menu/demo"
-                className="inline-flex items-center justify-center rounded-lg border-2 border-primary px-6 py-4 text-base font-semibold text-primary hover:bg-primary-light"
-              >
-                Ver ejemplo en vivo
-              </Link>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-2xl" aria-hidden="true" />
-            <img
-              src="https://images.pexels.com/photos/4391470/pexels-photo-4391470.jpeg?auto=compress&cs=tinysrgb&w=900"
-              alt="Menú digital en una tablet"
-              className="relative aspect-[4/5] w-full rounded-3xl object-cover shadow-2xl"
-            />
-          </div>
-        </div>
-      </section>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            serviceJsonLd({
+              name: "Menú Digital para Restaurantes con QR",
+              description: DESCRIPTION,
+              path: "/funcionalidades/menu-digital",
+              serviceType: "Menú digital con código QR para restaurantes",
+            }),
+            webPageJsonLd({
+              name: "Menú Digital para Restaurantes con QR",
+              description: DESCRIPTION,
+              path: "/funcionalidades/menu-digital",
+            }),
+            faqJsonLd(FAQS),
+            breadcrumbJsonLd([
+              { name: "Inicio", url: "/" },
+              { name: "Funcionalidades", url: "/funcionalidades/menu-digital" },
+              { name: "Menú Digital", url: "/funcionalidades/menu-digital" },
+            ]),
+          ]),
+        }}
+      />
 
-      <section className="border-y border-border bg-surface px-6 py-12">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 md:grid-cols-3">
-          {STATS.map((s) => (
-            <div key={s.label} className="text-center md:text-left">
-              <p className="text-5xl font-bold text-primary sm:text-6xl">{s.value}</p>
-              <p className="mt-2 text-sm font-medium uppercase tracking-wider text-text-secondary">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <FeatureHero
+        eyebrow="Funcionalidad · Menú Digital"
+        title="Menú digital para restaurantes: tu carta viva en cada pantalla."
+        lead="Un menú digital con QR que se actualiza solo, se ve increíble y se
+          encuentra en Google. Tus clientes piden antes de sentarse y vos ya
+          tenés el pedido listo. Sin comisiones, en Buenos Aires y toda Argentina."
+        primaryCta={{ href: `mailto:${SITE.email}`, label: "Probar menú demo" }}
+        secondaryCta={{ href: "/menu/demo", label: "Ver ejemplo en vivo" }}
+        imageSrc="https://images.pexels.com/photos/4391470/pexels-photo-4391470.jpeg?auto=compress&cs=tinysrgb&w=900"
+        imageAlt="Menú digital para restaurante con código QR en una tablet"
+      />
 
-      <section className="px-6 py-24">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-14 max-w-2xl">
-            <h2 className="text-3xl font-bold text-text-primary sm:text-4xl">
-              Todo lo que tu carta en papel nunca pudo hacer
-            </h2>
-            <p className="mt-4 text-lg text-text-secondary">
-              Diseñado para restaurantes que no quieren reimprimir su menú
-              cada vez que cambia el precio del tomate.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <Card key={f.title} className="rounded-2xl border border-border bg-background p-6 transition hover:border-primary hover:shadow-lg">
-                <CardContent className="p-0">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-light text-primary">
-                    <f.icon className="h-6 w-6" aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-semibold text-text-primary">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-text-secondary">{f.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <StatsBand stats={STATS} />
 
-      <section className="bg-primary px-6 py-20 text-white">
-        <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
-          <h2 className="text-3xl font-bold sm:text-4xl">
-            Empezá con tu menú digital hoy
-          </h2>
-          <p className="mt-4 max-w-2xl text-lg text-white/85">
-            Te lo dejamos configurado en menos de 24 horas. Solo mandanos tu
-            carta y nosotros la subimos.
-          </p>
-          <Link
-            href="mailto:hola@platorest.com"
-            className="mt-8 inline-flex items-center justify-center rounded-lg bg-white px-8 py-4 text-base font-semibold text-primary transition hover:bg-orange-50"
-          >
-            Quiero mi menú digital
-          </Link>
-        </div>
-      </section>
+      <FeaturesGrid
+        heading="Todo lo que tu carta en papel nunca pudo hacer"
+        subheading="Diseñado para restaurantes que no quieren reimprimir su menú
+          cada vez que cambia el precio del tomate."
+        features={FEATURES}
+      />
+
+      <FaqSection
+        heading="Preguntas frecuentes sobre el menú digital"
+        faqs={FAQS}
+      />
+
+      <CtaSection
+        title="Empezá con tu menú digital hoy"
+        description="Te lo dejamos configurado en menos de 24 horas. Solo mandanos tu
+          carta y nosotros la subimos."
+        ctaLabel="Quiero mi menú digital"
+      />
     </main>
   );
 }

@@ -1,13 +1,47 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Image from "next/image";
 import { HiOutlineClock } from "react-icons/hi2";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { ensureFeaturedCategory } from "@/lib/featured-category";
 import { getOpenStatus } from "@/lib/opening-hours";
+import { restaurantMenuJsonLd } from "@/lib/seo";
 import { CartBar } from "./cart-bar";
 import { MenuNavbar } from "./menu-navbar";
 import { MenuContent } from "./menu-content";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ restaurantSlug: string }>;
+}): Promise<Metadata> {
+  const { restaurantSlug } = await params;
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug: restaurantSlug },
+    select: { name: true, slug: true, logo: true, banner: true, address: true },
+  });
+  if (!restaurant) return {};
+
+  const title = `${restaurant.name} | Menú Digital`;
+  const description = `Mirá el menú digital de ${restaurant.name}: carta completa con precios actualizados, pedidos online y reservas. Escaneá el QR y pedí desde tu celular.`;
+  const url = `/menu/${restaurant.slug}`;
+  const image = restaurant.banner ?? restaurant.logo;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      title,
+      description,
+      ...(image && { images: [{ url: image }] }),
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
 
 async function getIsCustomerSession(businessId: string) {
   const session = await auth();
@@ -46,7 +80,11 @@ export default async function MenuPage({
               variants: { orderBy: { price: "asc" } },
               modifierGroups: {
                 orderBy: { sortOrder: "asc" },
-                include: { modifiers: { orderBy: { sortOrder: "asc" } } },
+                include: {
+                  modifierGroup: {
+                    include: { modifiers: { orderBy: { sortOrder: "asc" } } },
+                  },
+                },
               },
             },
           },
@@ -72,13 +110,13 @@ export default async function MenuPage({
       ...c,
       products: c.products.map((p) => ({
         ...p,
-        variants: p.variants.map((v) => ({ ...v, price: Number(v.price) })),
-        modifierGroups: p.modifierGroups.map((g) => ({
-          id: g.id,
-          name: g.name,
-          required: g.required,
-          multiple: g.multiple,
-          modifiers: g.modifiers.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })),
+        variants: p.variants.map((v) => ({ id: v.id, price: Number(v.price) })),
+        modifierGroups: p.modifierGroups.map((pmg) => ({
+          id: pmg.modifierGroup.id,
+          name: pmg.modifierGroup.name,
+          required: pmg.modifierGroup.required,
+          multiple: pmg.modifierGroup.multiple,
+          modifiers: pmg.modifierGroup.modifiers.map((m) => ({ id: m.id, name: m.name, price: Number(m.price) })),
         })),
       })),
     }));
@@ -86,8 +124,32 @@ export default async function MenuPage({
   const whatsappNumber = restaurant.business.socialLinks[0]?.url ?? null;
   const openStatus = getOpenStatus(restaurant.openingHours);
 
+  const jsonLd = restaurantMenuJsonLd({
+    name: restaurant.name,
+    slug: restaurant.slug,
+    logo: restaurant.logo,
+    banner: restaurant.banner,
+    address: restaurant.address,
+    lat: restaurant.lat,
+    lng: restaurant.lng,
+    categories: categoriesWithProducts.map((c) => ({
+      name: c.name,
+      products: c.products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        imageUrl: p.imageUrl,
+        price: p.variants[0]?.price ?? 0,
+      })),
+    })),
+  });
+
   return (
     <main className="min-h-screen bg-surface pb-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MenuNavbar
         restaurantSlug={restaurant.slug}
         restaurantName={restaurant.name}

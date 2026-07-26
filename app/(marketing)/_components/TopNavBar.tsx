@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { HiDeviceTablet, HiCube, HiCalculator, HiQrCode, HiChartBar, HiHeart } from "react-icons/hi2";
 import type { IconType } from "react-icons";
 
-const FUNCTIONALITIES: { href: string; label: string; icon: IconType }[] = [
-  { href: "/funcionalidades/menu-digital", label: "Menu Digital", icon: HiDeviceTablet },
+const FUNCTIONALITIES: { href: string; label: string; icon: IconType; available?: boolean }[] = [
+  { href: "/funcionalidades/menu-digital", label: "Menu Digital", icon: HiDeviceTablet, available: true },
   { href: "/funcionalidades/inventario", label: "Inventario", icon: HiCube },
   { href: "/funcionalidades/punto-de-venta", label: "Punto de Venta", icon: HiCalculator },
   { href: "/funcionalidades/menu-qr", label: "Menu QR", icon: HiQrCode },
@@ -20,7 +20,7 @@ const NAV_LINKS = [
     : []),
 ];
 
-function FunctionalityDropdown({ mobile = false }: { mobile?: boolean }) {
+function FunctionalityDropdown({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -54,13 +54,24 @@ function FunctionalityDropdown({ mobile = false }: { mobile?: boolean }) {
             const Icon = f.icon;
             return (
               <li key={f.href}>
-                <div
-                  aria-disabled="true"
-                  className="flex cursor-default items-center gap-3 py-2 text-sm text-text-secondary opacity-60"
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  {f.label}
-                </div>
+                {f.available ? (
+                  <Link
+                    href={f.href}
+                    onClick={onNavigate}
+                    className="flex items-center gap-3 py-2 text-sm text-text-primary hover:text-orange-500"
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {f.label}
+                  </Link>
+                ) : (
+                  <div
+                    aria-disabled="true"
+                    className="flex cursor-default items-center gap-3 py-2 text-sm text-text-secondary opacity-60"
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {f.label}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -90,6 +101,20 @@ function FunctionalityDropdown({ mobile = false }: { mobile?: boolean }) {
         >
           {FUNCTIONALITIES.map((f) => {
             const Icon = f.icon;
+            if (f.available) {
+              return (
+                <Link
+                  key={f.href}
+                  href={f.href}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-text-primary transition hover:bg-primary-light hover:text-primary"
+                >
+                  <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                  {f.label}
+                </Link>
+              );
+            }
             return (
               <div
                 key={f.href}
@@ -159,7 +184,7 @@ export default function TopNavBar() {
 
       {open && (
         <nav className="flex flex-col gap-1 border-t border-border px-6 py-4 md:hidden">
-          <FunctionalityDropdown mobile />
+          <FunctionalityDropdown mobile onNavigate={() => setOpen(false)} />
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}

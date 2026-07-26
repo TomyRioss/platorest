@@ -4,13 +4,15 @@ import { useState, useTransition, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SITE } from "@/lib/seo";
 import { createLead } from "../_actions/lead";
+import posthog from "posthog-js";
 
 type Mode = "contacto" | "contactar";
 type Errors = { name?: string; email?: string; restaurant?: string; phone?: string };
 
 const PHONE_NUMBER = "+54 9 11 7141-0652";
-const PHONE_HREF = "tel:+5491171410652";
+const PHONE_HREF = `tel:${SITE.phone}`;
 
 export default function LeadForm() {
   const [mode, setMode] = useState<Mode>("contacto");
@@ -47,6 +49,7 @@ export default function LeadForm() {
         phone,
       });
       if (result.ok) {
+        posthog.capture("lead_form_submitted");
         setSubmitted(true);
       } else {
         setServerError(result.error);

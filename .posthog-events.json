@@ -1,0 +1,67 @@
+[
+  {
+    "event_name": "user_signed_up",
+    "event_description": "User successfully completes registration with email and password.",
+    "file": "app/register/page.tsx"
+  },
+  {
+    "event_name": "user_signed_up_google",
+    "event_description": "User initiates registration via Google OAuth.",
+    "file": "app/register/page.tsx"
+  },
+  {
+    "event_name": "user_logged_in",
+    "event_description": "User successfully logs in with email and password.",
+    "file": "app/login/page.tsx"
+  },
+  {
+    "event_name": "user_logged_in_google",
+    "event_description": "User initiates login via Google OAuth.",
+    "file": "app/login/page.tsx"
+  },
+  {
+    "event_name": "login_failed",
+    "event_description": "User login attempt failed due to incorrect credentials.",
+    "file": "app/login/page.tsx"
+  },
+  {
+    "event_name": "onboarding_completed",
+    "event_description": "Restaurant and business are successfully created during onboarding (server-side).",
+    "file": "app/api/onboarding/route.ts"
+  },
+  {
+    "event_name": "lead_form_submitted",
+    "event_description": "Visitor submits the demo request form on the marketing landing page.",
+    "file": "app/(marketing)/_components/LeadForm.tsx"
+  },
+  {
+    "event_name": "menu_viewed",
+    "event_description": "Customer opens a restaurant's digital menu — top of the order conversion funnel.",
+    "file": "app/menu/[restaurantSlug]/menu-content.tsx"
+  },
+  {
+    "event_name": "product_viewed",
+    "event_description": "Customer taps a product to view its detail page.",
+    "file": "app/menu/[restaurantSlug]/menu-content.tsx"
+  },
+  {
+    "event_name": "menu_searched",
+    "event_description": "Customer types in the menu search box to find a product.",
+    "file": "app/menu/[restaurantSlug]/menu-content.tsx"
+  },
+  {
+    "event_name": "checkout_started",
+    "event_description": "Customer proceeds to the checkout form after filling the cart.",
+    "file": "app/menu/[restaurantSlug]/cart-bar.tsx"
+  },
+  {
+    "event_name": "order_placed",
+    "event_description": "Customer order is successfully created in the database (server-side).",
+    "file": "app/menu/[restaurantSlug]/checkout/actions.ts"
+  },
+  {
+    "event_name": "order_place_failed",
+    "event_description": "Order creation failed and the customer sees an error.",
+    "file": "app/menu/[restaurantSlug]/checkout/page.tsx"
+  }
+]

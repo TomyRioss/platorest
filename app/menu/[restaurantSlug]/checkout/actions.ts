@@ -2,10 +2,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { geocodeAddress, haversineKm } from "@/lib/geo";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export type CheckoutInput = {
   restaurantSlug: string;
-  items: { productId: string; qty: number }[];
+  items: { variantId: string; qty: number }[];
   fulfillment: "PICKUP" | "DELIVERY";
   deliveryAddress?: string;
   customerName: string;
@@ -15,7 +16,13 @@ export type CheckoutInput = {
 };
 
 export type CheckoutResult =
-  | { ok: true; orderId: string; total: number }
+  | {
+      ok: true;
+      orderId: string;
+      total: number;
+      whatsappNumber: string | null;
+      items: { name: string; qty: number; price: number }[];
+    }
   | { ok: false; error: string };
 
 export async function createOrder(
@@ -23,6 +30,7 @@ export async function createOrder(
 ): Promise<CheckoutResult> {
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug: input.restaurantSlug },
+    include: { business: { include: { socialLinks: { where: { platform: "WHATSAPP" } } } } },
   });
   if (!restaurant) return { ok: false, error: "Restaurante no encontrado." };
 
@@ -30,14 +38,14 @@ export async function createOrder(
     return { ok: false, error: "El carrito está vacío." };
   }
 
-  const products = await prisma.product.findMany({
+  const variants = await prisma.productVariant.findMany({
     where: {
-      id: { in: input.items.map((i) => i.productId) },
-      restaurantId: restaurant.id,
-      active: true,
+      id: { in: input.items.map((i) => i.variantId) },
+      product: { restaurantId: restaurant.id, active: true },
     },
+    include: { product: true },
   });
-  if (products.length !== input.items.length) {
+  if (variants.length !== input.items.length) {
     return { ok: false, error: "Algún producto ya no está disponible." };
   }
 
@@ -73,7 +81,7 @@ export async function createOrder(
 
   let customer = await prisma.customer.findFirst({
     where: {
-      restaurantId: restaurant.id,
+      businessId: restaurant.businessId,
       OR: [
         input.customerPhone ? { phone: input.customerPhone } : undefined,
         input.customerEmail ? { email: input.customerEmail } : undefined,
@@ -83,7 +91,7 @@ export async function createOrder(
   if (!customer) {
     customer = await prisma.customer.create({
       data: {
-        restaurantId: restaurant.id,
+        businessId: restaurant.businessId,
         name: input.customerName,
         phone: input.customerPhone,
         email: input.customerEmail,
@@ -92,8 +100,8 @@ export async function createOrder(
   }
 
   const total = input.items.reduce((sum, item) => {
-    const product = products.find((p) => p.id === item.productId)!;
-    return sum + Number(product.price) * item.qty;
+    const variant = variants.find((v) => v.id === item.variantId)!;
+    return sum + Number(variant.price) * item.qty;
   }, 0);
 
   const order = await prisma.order.create({
@@ -108,16 +116,42 @@ export async function createOrder(
       total,
       items: {
         create: input.items.map((item) => {
-          const product = products.find((p) => p.id === item.productId)!;
+          const variant = variants.find((v) => v.id === item.variantId)!;
           return {
-            productId: product.id,
+            variantId: variant.id,
             quantity: item.qty,
-            unitPrice: product.price,
+            unitPrice: variant.price,
           };
         }),
       },
     },
   });
 
-  return { ok: true, orderId: order.id, total };
+  const ph = getPostHogClient();
+  if (ph) {
+    ph.capture({
+      distinctId: customer.id,
+      event: "order_placed",
+      properties: {
+        order_id: order.id,
+        restaurant_slug: input.restaurantSlug,
+        fulfillment: input.fulfillment,
+        payment_method: input.paymentMethod,
+        total,
+        item_count: input.items.reduce((s, i) => s + i.qty, 0),
+      },
+    });
+    await ph.flush();
+  }
+
+  return {
+    ok: true,
+    orderId: order.id,
+    total,
+    whatsappNumber: restaurant.business.socialLinks[0]?.url ?? null,
+    items: input.items.map((item) => {
+      const variant = variants.find((v) => v.id === item.variantId)!;
+      return { name: variant.product.name, qty: item.qty, price: Number(variant.price) };
+    }),
+  };
 }

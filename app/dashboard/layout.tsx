@@ -1,9 +1,10 @@
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { Smartphone, ChevronDown, Headset } from "lucide-react";
+import { auth, signOut } from "@/lib/auth";
+import { Smartphone, ChevronDown, Headset, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarNav } from "./sidebar-nav";
@@ -58,12 +59,12 @@ export default async function AdminLayout({
             </span>
           )}
         </div>
-        <div className="flex flex-1 items-center justify-end gap-6 px-6">
+        <div className="flex h-16 flex-1 items-center justify-end pl-6">
           <a
             href="https://wa.me/5491171410652"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex cursor-pointer items-center gap-2 text-sm font-medium text-white hover:text-white/80"
+            className="mr-6 flex cursor-pointer items-center gap-2 text-sm font-medium text-white hover:text-white/80"
           >
             <Headset className="h-5 w-5" />
             Soporte
@@ -72,11 +73,32 @@ export default async function AdminLayout({
           <div className="h-6 w-px bg-white/30" />
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex min-w-40 cursor-pointer items-center justify-between gap-1.5 text-sm font-medium text-white outline-none">
+            <DropdownMenuTrigger className="group flex h-16 min-w-40 cursor-pointer items-center justify-between gap-1.5 pr-6 pl-6 text-sm font-medium text-white outline-none">
               {session?.user?.name}
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[popup-open]:rotate-180" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" />
+            <DropdownMenuContent
+              align="end"
+              sideOffset={0}
+              className="h-(--anchor-height) rounded-none p-0 duration-200 ease-out"
+            >
+              <form
+                className="h-full"
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/login" });
+                }}
+              >
+                <DropdownMenuItem
+                  nativeButton
+                  render={<button type="submit" className="w-full" />}
+                  className="h-full justify-center gap-2 rounded-none px-4"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Cerrar sesión
+                </DropdownMenuItem>
+              </form>
+            </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>

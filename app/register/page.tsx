@@ -8,6 +8,7 @@ import { FcGoogle } from "react-icons/fc";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { signIn } from "next-auth/react";
+import posthog from "posthog-js";
 
 const BENEFITS = [
   "Crea tu menú digital en segundos",
@@ -76,6 +77,7 @@ export default function RegisterPage() {
       const signInRes = await signIn("credentials", { email, password, redirect: false });
       if (signInRes?.error) throw new Error("No pudimos iniciar sesión. Probá ingresar manualmente.");
 
+      posthog.capture("user_signed_up", { method: "credentials", where_heard: whereHeard });
       // ya tenemos nombre/telefono, wizard solo pide dirección
       router.push("/onboarding?skip=contact");
       router.refresh();
@@ -94,13 +96,13 @@ export default function RegisterPage() {
       return;
     }
     setGoogleLoading(true);
+    posthog.capture("user_signed_up_google");
     try {
       // Google no da telefono/direccion/nombre restaurante, wizard completo los pide
-      router.push("/onboarding");
+      await signIn("google", { callbackUrl: "/onboarding" });
     } catch (err) {
       console.error("[register] google signup failed", err);
       setError("No pudimos conectar con Google. Intentá de nuevo.");
-    } finally {
       setGoogleLoading(false);
     }
   }

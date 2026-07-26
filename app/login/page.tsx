@@ -4,7 +4,9 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import posthog from "posthog-js";
 import { HiCheckCircle, HiChatBubbleLeftRight, HiEye, HiEyeSlash } from "react-icons/hi2";
+import { FcGoogle } from "react-icons/fc";
 
 const BENEFITS = [
   "Crea tu menú digital en segundos",
@@ -30,6 +32,20 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setGoogleLoading(true);
+    posthog.capture("user_logged_in_google");
+    try {
+      await signIn("google", { callbackUrl: searchParams.get("callbackUrl") ?? "/dashboard" });
+    } catch (err) {
+      console.error("[login] google signin failed", err);
+      setError("No pudimos conectar con Google. Intentá de nuevo.");
+      setGoogleLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,9 +58,11 @@ function LoginForm() {
         redirect: false,
       });
       if (res?.error) {
+        posthog.capture("login_failed", { method: "credentials" });
         setError("Email o contraseña incorrectos.");
         return;
       }
+      posthog.capture("user_logged_in", { method: "credentials" });
       router.push(searchParams.get("callbackUrl") ?? "/dashboard");
       router.refresh();
     } catch (err) {
@@ -92,6 +110,22 @@ function LoginForm() {
           <p className="mt-3 text-sm text-text-secondary">
             Ingresá a tu cuenta para gestionar tu restaurante.
           </p>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-3 font-semibold text-text-primary transition hover:bg-border/30 disabled:opacity-50"
+          >
+            <FcGoogle className="h-5 w-5" />
+            {googleLoading ? "Conectando..." : "Continuar con Google"}
+          </button>
+
+          <div className="my-4 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs text-text-secondary">o con tu email</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
 
           <div className="mt-8 space-y-4">
             <div>

@@ -103,12 +103,14 @@ export function ProductImageUploader({
               />
               <div className="mt-3 flex justify-end gap-2">
                 <button
+                  type="button"
                   onClick={() => setRawImage(null)}
                   className="rounded px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface"
                 >
                   Cancelar
                 </button>
                 <button
+                  type="button"
                   onClick={handleConfirmCrop}
                   className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover"
                 >

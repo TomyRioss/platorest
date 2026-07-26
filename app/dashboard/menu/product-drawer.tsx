@@ -209,6 +209,7 @@ function ExtraFields({ row, updateRow }: { row: Row; updateRow: (key: string, pa
 }
 
 export function ProductDrawer({
+  restaurantId,
   state,
   isPending,
   onClose,
@@ -216,6 +217,7 @@ export function ProductDrawer({
   onImageChange,
   onModifiersSaved,
 }: {
+  restaurantId: string;
   state: DrawerState;
   isPending: boolean;
   onClose: () => void;
@@ -320,8 +322,19 @@ export function ProductDrawer({
   }
 
   return (
-    <Sheet open={!!state} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="flex w-full flex-col sm:max-w-md">
+    <Sheet
+      open={!!state}
+      onOpenChange={(open, eventDetails) => {
+        if (open) return;
+        if (eventDetails.reason === "outside-press" || eventDetails.reason === "focus-out") return;
+        onClose();
+      }}
+      modal={false}
+    >
+      <SheetContent
+        showOverlay={false}
+        className="flex w-full flex-col sm:max-w-md data-[side=right]:top-16 data-[side=right]:h-[calc(100%-4rem)]"
+      >
         <SheetHeader>
           <SheetTitle>{state?.mode === "create" ? "Nuevo producto" : "Editar producto"}</SheetTitle>
         </SheetHeader>
@@ -463,6 +476,7 @@ export function ProductDrawer({
 
           {state?.mode === "edit" ? (
             <ModifierGroupsEditor
+              restaurantId={restaurantId}
               productId={state.product.id}
               groups={state.product.modifierGroups}
               onSaved={onModifiersSaved}

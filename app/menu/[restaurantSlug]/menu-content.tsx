@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { HiBars3, HiChevronDown, HiMagnifyingGlass } from "react-icons/hi2";
-import { AddToCartButton } from "./add-to-cart-button";
-import { ProductModifiersDrawer } from "./product-modifiers-drawer";
+import posthog from "posthog-js";
 import {
   Sheet,
   SheetContent,
@@ -37,9 +37,33 @@ export function MenuContent({
   restaurantSlug: string;
   categories: Category[];
 }) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [modifierProduct, setModifierProduct] = useState<Product | null>(null);
+  const menuViewedRef = useRef(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!menuViewedRef.current) {
+      menuViewedRef.current = true;
+      posthog.capture("menu_viewed", { restaurant_slug: restaurantSlug });
+    }
+  }, [restaurantSlug]);
+
+  function handleSearchChange(value: string) {
+    setQuery(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (value.trim()) {
+      searchTimerRef.current = setTimeout(() => {
+        posthog.capture("menu_searched", { restaurant_slug: restaurantSlug, query: value.trim() });
+      }, 600);
+    }
+  }
+
+  function openProduct(product: Product) {
+    posthog.capture("product_viewed", { product_id: product.id, product_name: product.name, restaurant_slug: restaurantSlug });
+    router.push(`/menu/${restaurantSlug}/${product.id}`);
+  }
 
   const filteredCategories = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -65,13 +89,13 @@ export function MenuContent({
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Buscar productos..."
               className="w-full min-w-0 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-secondary"
             />
             <HiMagnifyingGlass className="h-4 w-4 shrink-0 text-text-secondary" />
           </div>
-          <div className="mx-auto flex max-w-2xl items-center gap-2 overflow-x-auto [scrollbar-width:none]">
+          <div className="flex max-w-2xl items-center gap-2 overflow-x-auto [scrollbar-width:none]">
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
@@ -145,7 +169,11 @@ export function MenuContent({
                       <div
                         key={product.id}
                         id={`prod-${product.id}`}
-                        className="w-40 shrink-0 scroll-mt-16 overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:w-52"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openProduct(product)}
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openProduct(product)}
+                        className="w-40 shrink-0 scroll-mt-16 cursor-pointer overflow-hidden rounded-lg border border-border bg-background shadow-sm lg:w-52"
                       >
                         <div className="relative">
                           {product.imageUrl ? (
@@ -158,25 +186,6 @@ export function MenuContent({
                             />
                           ) : (
                             <div className="h-28 w-full bg-primary-light lg:h-36" />
-                          )}
-                          {variant && (
-                            product.modifierGroups.length > 0 ? (
-                              <button
-                                type="button"
-                                onClick={() => setModifierProduct(product)}
-                                aria-label={`Elegir opciones de ${product.name}`}
-                                className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-lg font-bold leading-none text-white shadow-sm hover:bg-primary-hover"
-                              >
-                                +
-                              </button>
-                            ) : (
-                              <AddToCartButton
-                                restaurantSlug={restaurantSlug}
-                                productId={variant.id}
-                                name={product.name}
-                                price={Number(variant.price)}
-                              />
-                            )
                           )}
                         </div>
                         <div className="p-2.5">
@@ -204,7 +213,11 @@ export function MenuContent({
                       <div
                         key={product.id}
                         id={`prod-${product.id}`}
-                        className="flex scroll-mt-16 items-center gap-3 rounded-lg bg-background p-3 shadow-sm lg:gap-5 lg:p-5"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => openProduct(product)}
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openProduct(product)}
+                        className="flex scroll-mt-16 cursor-pointer items-center gap-3 rounded-lg bg-background p-3 shadow-sm lg:gap-5 lg:p-5"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-text-primary lg:text-lg">{product.name}</p>
@@ -231,25 +244,6 @@ export function MenuContent({
                           ) : (
                             <div className="h-20 w-20 rounded-lg bg-primary-light lg:h-32 lg:w-32" />
                           )}
-                          {variant && (
-                            product.modifierGroups.length > 0 ? (
-                              <button
-                                type="button"
-                                onClick={() => setModifierProduct(product)}
-                                aria-label={`Elegir opciones de ${product.name}`}
-                                className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-lg font-bold leading-none text-white shadow-sm hover:bg-primary-hover"
-                              >
-                                +
-                              </button>
-                            ) : (
-                              <AddToCartButton
-                                restaurantSlug={restaurantSlug}
-                                productId={variant.id}
-                                name={product.name}
-                                price={Number(variant.price)}
-                              />
-                            )
-                          )}
                         </div>
                       </div>
                     );
@@ -260,23 +254,6 @@ export function MenuContent({
           ))
         )}
       </div>
-
-      <ProductModifiersDrawer
-        restaurantSlug={restaurantSlug}
-        product={
-          modifierProduct
-            ? {
-                id: modifierProduct.id,
-                name: modifierProduct.name,
-                description: modifierProduct.description,
-                imageUrl: modifierProduct.imageUrl,
-                price: Number(modifierProduct.variants[0]?.price ?? 0),
-                modifierGroups: modifierProduct.modifierGroups,
-              }
-            : null
-        }
-        onClose={() => setModifierProduct(null)}
-      />
     </>
   );
 }

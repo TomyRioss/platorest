@@ -1,3 +1,5 @@
+import { SITE } from "@/lib/seo";
+
 export default function WhatsappFloatButton() {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
@@ -6,7 +8,7 @@ export default function WhatsappFloatButton() {
         <span className="absolute right-[-6px] top-1/2 h-3 w-3 -translate-y-1/2 rotate-45 bg-white shadow-[2px_-2px_2px_0_rgba(0,0,0,0.05)]" />
       </div>
       <a
-        href="https://wa.me/5491171410652"
+        href={SITE.whatsapp}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Agenda una demo guiada por WhatsApp"

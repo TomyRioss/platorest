@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { FaInstagram, FaFacebookF, FaWhatsapp } from "react-icons/fa6";
+import { SITE } from "@/lib/seo";
 
 const FOOTER_SECTIONS = [
   {
     title: "Producto",
     links: [
+      { label: "Menú digital", href: "/funcionalidades/menu-digital" },
       ...(process.env.NEXT_PUBLIC_SHOW_PRICING === "true"
         ? [{ label: "Precios", href: "/precios" }]
         : []),
@@ -14,16 +16,16 @@ const FOOTER_SECTIONS = [
   {
     title: "Soporte",
     links: [
-      { label: "Contacto", href: "mailto:hola@platorest.com" },
-      { label: "WhatsApp", href: "https://wa.me/5491171410652" },
+      { label: "Contacto", href: `mailto:${SITE.email}` },
+      { label: "WhatsApp", href: SITE.whatsapp },
     ],
   },
 ];
 
 const SOCIALS = [
-  { label: "WhatsApp", href: "https://wa.me/5491171410652", icon: FaWhatsapp },
-  { label: "Instagram", href: "https://www.instagram.com/platorest.ok/", icon: FaInstagram },
-  { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61591386167046", icon: FaFacebookF },
+  { label: "WhatsApp", href: SITE.whatsapp, icon: FaWhatsapp },
+  { label: "Instagram", href: SITE.instagram, icon: FaInstagram },
+  { label: "Facebook", href: SITE.facebook, icon: FaFacebookF },
 ];
 
 export default function Footer() {
@@ -36,7 +38,7 @@ export default function Footer() {
               PlatoRest
             </Link>
             <p className="mt-3 text-sm text-text-secondary">
-              El único sistema todo-en-uno que tu restaurante necesita para crecer.
+              Menú digital con QR y sistema gastronómico todo-en-uno para restaurantes en Buenos Aires y toda Argentina.
             </p>
             <div className="mt-6 flex gap-3">
               {SOCIALS.map((s) => {

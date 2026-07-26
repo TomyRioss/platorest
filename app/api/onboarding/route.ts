@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(req: Request) {
   try {
@@ -11,19 +12,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No autenticado." }, { status: 401 });
     }
 
-    const { address, lat, lng } = await req.json();
+    const { address, lat, lng, fullName, phone, restaurantName } = await req.json();
 
     const user = await prisma.user.findUnique({ where: { email: session.user.email } });
     if (!user) {
       return NextResponse.json({ error: "Usuario no encontrado." }, { status: 404 });
     }
 
-    const membership = await prisma.membership.findFirst({
+    let membership = await prisma.membership.findFirst({
       where: { userId: user.id, role: "OWNER" },
       include: { business: true },
     });
+
     if (!membership) {
-      return NextResponse.json({ error: "Negocio no encontrado." }, { status: 404 });
+      if (!restaurantName) {
+        return NextResponse.json({ error: "Falta el nombre del restaurante." }, { status: 400 });
+      }
+
+      if (fullName || phone) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { name: fullName || user.name, phone: phone || user.phone },
+        });
+      }
+
+      const baseBusinessSlug = slugify(restaurantName) || "negocio";
+      let businessSlug = baseBusinessSlug;
+      let businessSuffix = 1;
+      while (await prisma.business.findUnique({ where: { slug: businessSlug } })) {
+        businessSlug = `${baseBusinessSlug}-${businessSuffix++}`;
+      }
+
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      const business = await prisma.business.create({
+        data: {
+          name: restaurantName,
+          slug: businessSlug,
+          trialEndsAt,
+          plan: "trial",
+          memberships: { create: { role: "OWNER", userId: user.id } },
+        },
+      });
+
+      membership = await prisma.membership.findFirstOrThrow({
+        where: { businessId: business.id, userId: user.id },
+        include: { business: true },
+      });
     }
 
     const existingRestaurant = await prisma.restaurant.findFirst({
@@ -59,6 +93,16 @@ export async function POST(req: Request) {
         sortOrder,
       })),
     });
+
+    const ph = getPostHogClient();
+    if (ph) {
+      ph.capture({
+        distinctId: user.id,
+        event: "onboarding_completed",
+        properties: { restaurant_slug: slug, plan: "trial" },
+      });
+      await ph.flush();
+    }
 
     return NextResponse.json({ slug: restaurant.slug }, { status: 201 });
   } catch (err) {

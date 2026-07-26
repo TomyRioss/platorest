@@ -185,6 +185,7 @@ export type ModifierGroupInput = {
 };
 
 export async function saveModifierGroup(
+  restaurantId: string,
   productId: string,
   input: ModifierGroupInput,
 ): Promise<ActionResult> {
@@ -204,10 +205,10 @@ export async function saveModifierGroup(
           await tx.modifier.deleteMany({ where: { id: { in: toDelete.map((m) => m.id) } } });
         }
       } else {
-        const count = await tx.modifierGroup.count({ where: { productId } });
+        const count = await tx.modifierGroup.count({ where: { restaurantId } });
         const group = await tx.modifierGroup.create({
           data: {
-            productId,
+            restaurantId,
             name: input.name.trim(),
             required: input.required,
             multiple: input.multiple,
@@ -215,6 +216,7 @@ export async function saveModifierGroup(
           },
         });
         groupId = group.id;
+        await tx.productModifierGroup.create({ data: { productId, modifierGroupId: groupId } });
       }
 
       for (let i = 0; i < input.modifiers.length; i++) {
@@ -239,6 +241,66 @@ export async function deleteModifierGroup(groupId: string): Promise<ActionResult
     await prisma.modifierGroup.delete({ where: { id: groupId } });
   } catch {
     return { ok: false, error: "No se pudo borrar el grupo." };
+  }
+  revalidatePath("/dashboard/menu");
+  return { ok: true };
+}
+
+export async function unlinkModifierGroupFromProduct(
+  productId: string,
+  modifierGroupId: string,
+): Promise<ActionResult> {
+  try {
+    await prisma.productModifierGroup.delete({
+      where: { productId_modifierGroupId: { productId, modifierGroupId } },
+    });
+  } catch {
+    return { ok: false, error: "No se pudo quitar el grupo del producto." };
+  }
+  revalidatePath("/dashboard/menu");
+  return { ok: true };
+}
+
+export type ProductForAssociation = { id: string; name: string; categoryName: string; linked: boolean };
+
+export async function getProductsForModifierGroup(
+  restaurantId: string,
+  modifierGroupId: string,
+): Promise<ProductForAssociation[]> {
+  const [products, links] = await Promise.all([
+    prisma.product.findMany({
+      where: { restaurantId },
+      orderBy: { name: "asc" },
+      include: { category: { select: { name: true } } },
+    }),
+    prisma.productModifierGroup.findMany({ where: { modifierGroupId }, select: { productId: true } }),
+  ]);
+  const linkedIds = new Set(links.map((l) => l.productId));
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    categoryName: p.category?.name ?? "Sin categoría",
+    linked: linkedIds.has(p.id),
+  }));
+}
+
+export async function setModifierGroupProductLink(
+  productId: string,
+  modifierGroupId: string,
+  linked: boolean,
+): Promise<ActionResult> {
+  try {
+    if (linked) {
+      await prisma.productModifierGroup.upsert({
+        where: { productId_modifierGroupId: { productId, modifierGroupId } },
+        create: { productId, modifierGroupId },
+        update: {},
+      });
+    } else {
+      await prisma.productModifierGroup.deleteMany({ where: { productId, modifierGroupId } });
+    }
+  } catch {
+    return { ok: false, error: "No se pudo actualizar la asociación." };
   }
   revalidatePath("/dashboard/menu");
   return { ok: true };

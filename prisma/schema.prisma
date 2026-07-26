@@ -70,6 +70,7 @@ model Restaurant {
   auditLogs         AuditLog[]
   surveys           Survey[]
   openingHours      OpeningHours[]
+  modifierGroups    ModifierGroup[]
 }
 
 model OpeningHours {
@@ -271,18 +272,30 @@ model Product {
   gallery      String[]   @default([])
   active       Boolean    @default(true)
   variants     ProductVariant[]
-  modifierGroups ModifierGroup[]
+  modifierGroups ProductModifierGroup[]
 }
 
 model ModifierGroup {
-  id         String     @id @default(cuid())
-  productId  String
-  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name       String
-  required   Boolean    @default(false)
-  multiple   Boolean    @default(false)
-  sortOrder  Int        @default(0)
-  modifiers  Modifier[]
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  required     Boolean    @default(false)
+  multiple     Boolean    @default(false)
+  sortOrder    Int        @default(0)
+  modifiers    Modifier[]
+  products     ProductModifierGroup[]
+}
+
+model ProductModifierGroup {
+  id              String        @id @default(cuid())
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  sortOrder       Int           @default(0)
+
+  @@unique([productId, modifierGroupId])
 }
 
 model Modifier {

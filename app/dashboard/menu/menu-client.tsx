@@ -450,7 +450,7 @@ export function MenuClient({
           {categories.length === 0 && (
             <p className="text-sm text-text-secondary">Sin categorías todavía.</p>
           )}
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+          <DndContext id="categories-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
             <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           {categories.map((category) => (
             <SortableCategoryRow key={category.id} categoryId={category.id}>
@@ -666,6 +666,7 @@ export function MenuClient({
       </div>
       </div>
       <ProductDrawer
+        restaurantId={restaurantId}
         state={drawerState}
         isPending={isPending}
         onClose={() => setDrawerState(null)}

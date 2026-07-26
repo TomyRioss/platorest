@@ -1,5 +1,5 @@
 export type CartItem = {
-  productId: string;
+  variantId: string;
   name: string;
   price: number;
   qty: number;
@@ -32,8 +32,8 @@ export function addToCart(restaurantSlug: string, item: CartItem) {
       ? current
       : { restaurantSlug, items: [] };
 
-  const key = item.key ?? item.productId;
-  const existing = cart.items.find((i) => (i.key ?? i.productId) === key);
+  const key = item.key ?? item.variantId;
+  const existing = cart.items.find((i) => (i.key ?? i.variantId) === key);
   if (existing) {
     existing.qty += item.qty;
   } else {

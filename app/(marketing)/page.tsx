@@ -1,10 +1,55 @@
+import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { HiHeart, HiDeviceTablet, HiCalculator, HiCube, HiChartBar, HiSparkles } from "react-icons/hi2";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import {
+  buildMetadata,
+  faqJsonLd,
+  softwareApplicationJsonLd,
+  webPageJsonLd,
+} from "@/lib/seo";
+import { FaqSection } from "./_components/sections";
 import LeadForm from "./_components/LeadForm";
+
+const DESCRIPTION =
+  "PlatoRest es el menú digital con QR y sistema gastronómico para restaurantes en Buenos Aires y toda Argentina: carta digital, pedidos online sin comisiones, punto de venta, inventario, estadísticas y fidelización en un solo lugar.";
+
+export const metadata: Metadata = buildMetadata({
+  title: "Menú Digital con QR y Sistema Gastronómico para Restaurantes",
+  description: DESCRIPTION,
+  path: "/",
+});
+
+const HOME_FAQS = [
+  {
+    question: "¿Qué es PlatoRest?",
+    answer:
+      "PlatoRest es un sistema gastronómico todo-en-uno para restaurantes, desarrollado en Buenos Aires, Argentina. Incluye menú digital con código QR, pedidos online sin comisiones, punto de venta (POS), control de inventario, estadísticas y fidelización de clientes en una sola plataforma.",
+  },
+  {
+    question: "¿Qué es un menú digital con QR para restaurantes?",
+    answer:
+      "Es la versión online de tu carta: el cliente escanea un código QR desde su celular, sin descargar ninguna app, y ve tus platos y precios siempre actualizados. Con PlatoRest además puede pedir, pagar y reservar desde el mismo menú digital.",
+  },
+  {
+    question: "¿PlatoRest cobra comisiones por los pedidos online?",
+    answer:
+      "No. A diferencia de las apps de delivery, PlatoRest no cobra comisiones por pedido. Funciona con una suscripción mensual fija y los pedidos que recibís a través de tu menú digital son 100% tuyos.",
+  },
+  {
+    question: "¿Funciona en Buenos Aires y en el resto de Argentina?",
+    answer:
+      "Sí. PlatoRest funciona en CABA, GBA y cualquier provincia de Argentina porque es 100% online. El soporte es 24/7, incluidos feriados y fines de semana, con atención presencial en CABA y Gran Buenos Aires.",
+  },
+  {
+    question: "¿Puedo probar el menú digital antes de pagar?",
+    answer:
+      "Sí. Podés agendar una demo personalizada gratuita de 15 minutos o acceder a un menú de ejemplo en vivo. Te dejamos tu carta digital configurada en menos de 24 horas.",
+  },
+];
 
 const FEATURES = [
   {
@@ -72,53 +117,45 @@ const FEATURES = [
   },
 ];
 
-type TableState = "free" | "occupied" | "reserved";
-
-const FLOOR_TABLES: { id: number; seats: number; state: TableState }[] = [
-  { id: 1, seats: 2, state: "occupied" },
-  { id: 2, seats: 4, state: "free" },
-  { id: 3, seats: 4, state: "occupied" },
-  { id: 4, seats: 2, state: "reserved" },
-  { id: 5, seats: 6, state: "occupied" },
-  { id: 6, seats: 2, state: "free" },
-  { id: 7, seats: 4, state: "free" },
-  { id: 8, seats: 4, state: "occupied" },
-  { id: 9, seats: 2, state: "reserved" },
-];
-
-const TABLE_STATE_STYLES: Record<TableState, string> = {
-  free: "border-2 border-border bg-background text-text-secondary",
-  occupied: "bg-primary text-white",
-  reserved: "border-2 border-dashed border-primary bg-primary-light text-primary",
-};
-
-const INCLUDED = [
-  "Soporte 24/7 en español",
-  "Usuarios ilimitados",
-  "Actualizaciones gratuitas de por vida",
-];
-
 export default function LandingPage() {
   return (
     <main>
-
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            softwareApplicationJsonLd(),
+            webPageJsonLd({
+              name: "Menú Digital con QR y Sistema Gastronómico para Restaurantes",
+              description: DESCRIPTION,
+              path: "/",
+            }),
+            faqJsonLd(HOME_FAQS),
+          ]),
+        }}
+      />
 
       <header className="relative flex min-h-[640px] items-start justify-center overflow-hidden bg-orange-50 pt-16 pb-16 md:h-[70vh] md:pb-24">
-        <img
-          src="https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1200"
-          alt="Cocina de restaurante"
-          className="absolute inset-y-0 right-0 hidden h-full w-[40%] object-cover md:block"
-        />
+        <div className="absolute inset-y-0 right-0 hidden h-full w-[40%] md:block">
+          <Image
+            src="https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1200"
+            alt="Cocina de restaurante usando un sistema gastronómico"
+            fill
+            priority
+            sizes="40vw"
+            className="object-cover"
+          />
+        </div>
 
         <div className="relative z-10 mx-auto flex h-full w-full max-w-6xl items-start justify-start px-6 md:w-[60%] md:pr-40">
           <div className="max-w-xl pt-20">
             <h1 className="text-balance text-2xl font-bold leading-[1.15] tracking-tight text-primary sm:text-3xl md:text-4xl">
-              El único sistema que necesitas, todo-en-uno para restaurantes.
+              Menú digital con QR y sistema gastronómico todo-en-uno para tu restaurante.
             </h1>
             <p className="mt-6 max-w-lg text-pretty text-lg text-text-secondary">
               PlatoRest te muestra el salón completo en tiempo real: quién
               está sentado, quién espera la cuenta y qué mesa se libera
-              primero.
+              primero. Menú digital con QR, POS, inventario y fidelización.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -158,12 +195,15 @@ export default function LandingPage() {
                 key={f.title}
                 className="overflow-hidden rounded-xl border border-border bg-background"
               >
-                <img
-                  src={f.image}
-                  alt={f.title}
-                  className="h-48 w-full object-cover"
-                  loading="lazy"
-                />
+                <div className="relative h-48 w-full">
+                  <Image
+                    src={f.image}
+                    alt={`${f.title} para restaurantes - PlatoRest`}
+                    fill
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
                 <CardContent className="p-6">
                   <h3 className="flex items-center gap-2 text-lg font-semibold text-primary">
                     <f.icon className="h-6 w-6" aria-hidden="true" />
@@ -217,7 +257,7 @@ export default function LandingPage() {
                     $40.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
                   </p>
                   <Link
-                    href="/precios"
+                    href="/register"
                     className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}
                   >
                     PROBALO GRATIS
@@ -228,6 +268,11 @@ export default function LandingPage() {
           </div>
         </section>
       )}
+
+      <FaqSection
+        heading="Preguntas frecuentes sobre PlatoRest"
+        faqs={HOME_FAQS}
+      />
 
       <section id="contacto" className="bg-primary px-6 py-24 text-white scroll-mt-20">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">

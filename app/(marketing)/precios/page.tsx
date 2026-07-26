@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { SITE } from "@/lib/seo";
 
 const INCLUDED = [
   "Smart POS ilimitado",
@@ -61,7 +62,7 @@ export default function PreciosPage() {
                 Un plan, todo incluido.
               </p>
               <Link
-                href="mailto:hola@platorest.com"
+                href={`mailto:${SITE.email}`}
                 className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}
               >
                 Contactanos
