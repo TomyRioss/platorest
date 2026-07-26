@@ -6,7 +6,7 @@ import { pointsForTotal } from "@/lib/loyalty";
 
 export type PosOrderInput = {
   restaurantId: string;
-  items: { productId: string; qty: number }[];
+  items: { variantId: string; qty: number }[];
   paymentMethod: "CASH" | "MERCADOPAGO";
   customerPhone?: string;
   customerEmail?: string;
@@ -23,14 +23,17 @@ export async function createPosOrder(
     return { ok: false, error: "Agregá al menos un producto." };
   }
 
-  const products = await prisma.product.findMany({
+  const restaurant = await prisma.restaurant.findUniqueOrThrow({
+    where: { id: input.restaurantId },
+  });
+
+  const variants = await prisma.productVariant.findMany({
     where: {
-      id: { in: input.items.map((i) => i.productId) },
-      restaurantId: input.restaurantId,
-      active: true,
+      id: { in: input.items.map((i) => i.variantId) },
+      product: { restaurantId: input.restaurantId, active: true },
     },
   });
-  if (products.length !== input.items.length) {
+  if (variants.length !== input.items.length) {
     return { ok: false, error: "Algún producto ya no está disponible." };
   }
 
@@ -38,7 +41,7 @@ export async function createPosOrder(
   if (input.customerPhone || input.customerEmail) {
     let customer = await prisma.customer.findFirst({
       where: {
-        restaurantId: input.restaurantId,
+        businessId: restaurant.businessId,
         OR: [
           input.customerPhone ? { phone: input.customerPhone } : undefined,
           input.customerEmail ? { email: input.customerEmail } : undefined,
@@ -48,7 +51,7 @@ export async function createPosOrder(
     if (!customer) {
       customer = await prisma.customer.create({
         data: {
-          restaurantId: input.restaurantId,
+          businessId: restaurant.businessId,
           name: "Cliente mostrador",
           phone: input.customerPhone,
           email: input.customerEmail,
@@ -59,8 +62,8 @@ export async function createPosOrder(
   }
 
   const total = input.items.reduce((sum, item) => {
-    const product = products.find((p) => p.id === item.productId)!;
-    return sum + Number(product.price) * item.qty;
+    const variant = variants.find((v) => v.id === item.variantId)!;
+    return sum + Number(variant.price) * item.qty;
   }, 0);
 
   const result = await prisma.$transaction(async (tx) => {
@@ -87,11 +90,11 @@ export async function createPosOrder(
         total,
         items: {
           create: input.items.map((item) => {
-            const product = products.find((p) => p.id === item.productId)!;
+            const variant = variants.find((v) => v.id === item.variantId)!;
             return {
-              productId: product.id,
+              variantId: variant.id,
               quantity: item.qty,
-              unitPrice: product.price,
+              unitPrice: variant.price,
             };
           }),
         },
@@ -100,10 +103,12 @@ export async function createPosOrder(
 
     // V5: loyaltyPoints only awarded on completed paid order — POS orders are created COMPLETED
     if (customerId) {
-      await tx.customer.update({
-        where: { id: customerId },
-        data: { loyaltyPoints: { increment: pointsForTotal(total) } },
-      });
+      const points = pointsForTotal(total);
+      if (points > 0) {
+        await tx.pointsTransaction.create({
+          data: { customerId, points, reason: "ORDER", orderId: order.id },
+        });
+      }
     }
 
     return { ok: true as const, orderId: order.id, total };

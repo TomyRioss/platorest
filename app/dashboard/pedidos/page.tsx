@@ -20,7 +20,7 @@ export default async function PedidosPage() {
     orderBy: { createdAt: "desc" },
     include: {
       customer: true,
-      items: { include: { product: true } },
+      items: { include: { variant: { include: { product: true } } } },
     },
   });
 
@@ -35,7 +35,7 @@ export default async function PedidosPage() {
         createdAt: o.createdAt.toISOString(),
         customerName: o.customer?.name ?? null,
         items: o.items.map((i) => ({
-          name: i.product.name,
+          name: i.variant.product.name,
           quantity: i.quantity,
         })),
       }))}

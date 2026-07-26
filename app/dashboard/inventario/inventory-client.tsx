@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createProduct, updateProduct } from "./actions";
+import { createProduct, updateVariantStock, toggleProductActive } from "./actions";
+
+const LOW_STOCK_THRESHOLD = 5;
 
 type Product = {
   id: string;
+  variantId: string;
   name: string;
   description: string | null;
   price: number;
   stockQty: number;
-  lowStockAlertAt: number;
   active: boolean;
 };
 
@@ -26,7 +28,6 @@ export function InventoryClient({
     name: "",
     price: "",
     stockQty: "",
-    lowStockAlertAt: "5",
   });
 
   function handleCreate(e: React.FormEvent) {
@@ -34,20 +35,14 @@ export function InventoryClient({
     setError(null);
     const price = Number(newProduct.price);
     const stockQty = Number(newProduct.stockQty);
-    const lowStockAlertAt = Number(newProduct.lowStockAlertAt);
     if (!newProduct.name || Number.isNaN(price) || Number.isNaN(stockQty)) {
       setError("Completá nombre, precio y stock correctamente.");
       return;
     }
     startTransition(async () => {
       try {
-        await createProduct(restaurantId, {
-          name: newProduct.name,
-          price,
-          stockQty,
-          lowStockAlertAt,
-        });
-        setNewProduct({ name: "", price: "", stockQty: "", lowStockAlertAt: "5" });
+        await createProduct(restaurantId, { name: newProduct.name, price, stockQty });
+        setNewProduct({ name: "", price: "", stockQty: "" });
       } catch (err) {
         console.error("create product error:", err);
         setError("No se pudo crear el producto.");
@@ -55,26 +50,14 @@ export function InventoryClient({
     });
   }
 
-  function handleStockChange(productId: string, stockQty: number) {
+  function handleStockChange(variantId: string, stockQty: number) {
     setError(null);
     startTransition(async () => {
       try {
-        await updateProduct(productId, { stockQty });
+        await updateVariantStock(variantId, stockQty);
       } catch (err) {
         console.error("update stock error:", err);
         setError("No se pudo actualizar el stock.");
-      }
-    });
-  }
-
-  function handleAlertChange(productId: string, lowStockAlertAt: number) {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await updateProduct(productId, { lowStockAlertAt });
-      } catch (err) {
-        console.error("update alert error:", err);
-        setError("No se pudo actualizar la alerta.");
       }
     });
   }
@@ -83,7 +66,7 @@ export function InventoryClient({
     setError(null);
     startTransition(async () => {
       try {
-        await updateProduct(productId, { active });
+        await toggleProductActive(productId, active);
       } catch (err) {
         console.error("toggle active error:", err);
         setError("No se pudo actualizar el estado.");
@@ -112,7 +95,7 @@ export function InventoryClient({
             placeholder="Nombre"
             value={newProduct.name}
             onChange={(e) => setNewProduct((p) => ({ ...p, name: e.target.value }))}
-            className="col-span-2 rounded border border-border px-3 py-2 outline-none focus:border-primary md:col-span-1"
+            className="col-span-2 rounded border border-border px-3 py-2 outline-none focus:border-primary md:col-span-2"
           />
           <input
             type="number"
@@ -128,13 +111,6 @@ export function InventoryClient({
             onChange={(e) => setNewProduct((p) => ({ ...p, stockQty: e.target.value }))}
             className="rounded border border-border px-3 py-2 outline-none focus:border-primary"
           />
-          <input
-            type="number"
-            placeholder="Alerta stock min."
-            value={newProduct.lowStockAlertAt}
-            onChange={(e) => setNewProduct((p) => ({ ...p, lowStockAlertAt: e.target.value }))}
-            className="rounded border border-border px-3 py-2 outline-none focus:border-primary"
-          />
           <button
             type="submit"
             disabled={isPending}
@@ -146,7 +122,7 @@ export function InventoryClient({
 
         <ul className="divide-y divide-border rounded-lg border border-border bg-background">
           {products.map((p) => {
-            const lowStock = p.stockQty <= p.lowStockAlertAt;
+            const lowStock = p.stockQty <= LOW_STOCK_THRESHOLD;
             return (
               <li key={p.id} className="flex flex-wrap items-center gap-3 p-4">
                 <div className="min-w-[120px] flex-1">
@@ -159,18 +135,8 @@ export function InventoryClient({
                   <input
                     type="number"
                     defaultValue={p.stockQty}
-                    onBlur={(e) => handleStockChange(p.id, Number(e.target.value))}
+                    onBlur={(e) => handleStockChange(p.variantId, Number(e.target.value))}
                     className="w-20 rounded border border-border px-2 py-1"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-text-secondary">Alerta</label>
-                  <input
-                    type="number"
-                    defaultValue={p.lowStockAlertAt}
-                    onBlur={(e) => handleAlertChange(p.id, Number(e.target.value))}
-                    className="w-16 rounded border border-border px-2 py-1"
                   />
                 </div>
 

@@ -8,7 +8,6 @@ export type ProductInput = {
   description?: string;
   price: number;
   stockQty: number;
-  lowStockAlertAt: number;
 };
 
 export async function createProduct(restaurantId: string, input: ProductInput) {
@@ -17,21 +16,26 @@ export async function createProduct(restaurantId: string, input: ProductInput) {
       restaurantId,
       name: input.name,
       description: input.description || null,
-      price: input.price,
-      stockQty: input.stockQty,
-      lowStockAlertAt: input.lowStockAlertAt,
+      variants: {
+        create: {
+          name: "Único",
+          price: input.price,
+          stockQty: input.stockQty,
+          trackStock: true,
+          isDefault: true,
+        },
+      },
     },
   });
   revalidatePath("/dashboard/inventario");
 }
 
-export async function updateProduct(
-  productId: string,
-  input: Partial<ProductInput> & { active?: boolean },
-) {
-  await prisma.product.update({
-    where: { id: productId },
-    data: input,
-  });
+export async function updateVariantStock(variantId: string, stockQty: number) {
+  await prisma.productVariant.update({ where: { id: variantId }, data: { stockQty } });
+  revalidatePath("/dashboard/inventario");
+}
+
+export async function toggleProductActive(productId: string, active: boolean) {
+  await prisma.product.update({ where: { id: productId }, data: { active } });
   revalidatePath("/dashboard/inventario");
 }

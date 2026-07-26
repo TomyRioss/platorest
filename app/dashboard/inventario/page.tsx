@@ -7,7 +7,12 @@ export default async function InventarioPage() {
   // ponytail: single-tenant MVP, same simplification as /dashboard/pos
   const restaurant = await prisma.restaurant.findFirst({
     orderBy: { createdAt: "asc" },
-    include: { products: { orderBy: { name: "asc" } } },
+    include: {
+      products: {
+        orderBy: { name: "asc" },
+        include: { variants: { where: { isDefault: true }, take: 1 } },
+      },
+    },
   });
 
   if (!restaurant) {
@@ -21,15 +26,17 @@ export default async function InventarioPage() {
   return (
     <InventoryClient
       restaurantId={restaurant.id}
-      products={restaurant.products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        price: Number(p.price),
-        stockQty: p.stockQty,
-        lowStockAlertAt: p.lowStockAlertAt,
-        active: p.active,
-      }))}
+      products={restaurant.products
+        .filter((p) => p.variants[0])
+        .map((p) => ({
+          id: p.id,
+          variantId: p.variants[0].id,
+          name: p.name,
+          description: p.description,
+          price: Number(p.variants[0].price),
+          stockQty: p.variants[0].stockQty ?? 0,
+          active: p.active,
+        }))}
     />
   );
 }

@@ -23,7 +23,7 @@ export default async function ClientesPage({
 
   const customers = await prisma.customer.findMany({
     where: {
-      restaurantId: restaurant.id,
+      businessId: restaurant.businessId,
       ...(q
         ? {
             OR: [
@@ -35,7 +35,10 @@ export default async function ClientesPage({
         : {}),
     },
     orderBy: { name: "asc" },
-    include: { _count: { select: { orders: true } } },
+    include: {
+      _count: { select: { orders: true } },
+      pointsTransactions: { select: { points: true } },
+    },
   });
 
   return (
@@ -75,7 +78,7 @@ export default async function ClientesPage({
                 </div>
                 <div className="text-right text-sm">
                   <p className="font-medium text-primary">
-                    {c.loyaltyPoints} pts
+                    {c.pointsTransactions.reduce((sum, t) => sum + t.points, 0)} pts
                   </p>
                   <p className="text-text-secondary">
                     {c._count.orders} pedido{c._count.orders !== 1 ? "s" : ""}

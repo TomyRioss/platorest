@@ -6,7 +6,7 @@ import { updateOrderStatus } from "./actions";
 type Order = {
   id: string;
   source: "POS" | "WEB";
-  fulfillment: "PICKUP" | "DELIVERY";
+  fulfillment: "PICKUP" | "DELIVERY" | "DINE_IN";
   status: "PENDING" | "CONFIRMED" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED";
   total: number;
   createdAt: string;

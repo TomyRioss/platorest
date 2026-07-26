@@ -35,7 +35,7 @@ export async function updateOrderStatus(
         const stockError = await decrementStockOrThrow(
           tx,
           order.restaurantId,
-          order.items.map((i) => ({ productId: i.productId, qty: i.quantity })),
+          order.items.map((i) => ({ variantId: i.variantId, qty: i.quantity })),
         );
         if (stockError) {
           throw new Error(
@@ -46,10 +46,12 @@ export async function updateOrderStatus(
 
       // V5: loyaltyPoints only awarded once, on completed paid order
       if (order.status !== "COMPLETED" && newStatus === "COMPLETED" && order.customerId) {
-        await tx.customer.update({
-          where: { id: order.customerId },
-          data: { loyaltyPoints: { increment: pointsForTotal(Number(order.total)) } },
-        });
+        const points = pointsForTotal(Number(order.total));
+        if (points > 0) {
+          await tx.pointsTransaction.create({
+            data: { customerId: order.customerId, points, reason: "ORDER", orderId: order.id },
+          });
+        }
       }
 
       await tx.order.update({ where: { id: orderId }, data: { status: newStatus } });

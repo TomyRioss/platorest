@@ -16,11 +16,14 @@ export default async function ClienteDetailPage({
     include: {
       orders: {
         orderBy: { createdAt: "desc" },
-        include: { items: { include: { product: true } } },
+        include: { items: { include: { variant: { include: { product: true } } } } },
       },
+      pointsTransactions: { select: { points: true } },
     },
   });
   if (!customer) notFound();
+
+  const loyaltyPoints = customer.pointsTransactions.reduce((sum, t) => sum + t.points, 0);
 
   return (
     <main className="min-h-screen bg-surface p-4 md:p-6">
@@ -37,7 +40,7 @@ export default async function ClienteDetailPage({
             {[customer.phone, customer.email].filter(Boolean).join(" · ")}
           </p>
           <p className="mt-2 font-medium text-primary">
-            {customer.loyaltyPoints} puntos
+            {loyaltyPoints} puntos
           </p>
         </div>
 
@@ -57,7 +60,7 @@ export default async function ClienteDetailPage({
               <ul className="mt-1 text-text-primary">
                 {order.items.map((item) => (
                   <li key={item.id}>
-                    {item.quantity}x {item.product.name}
+                    {item.quantity}x {item.variant.product.name}
                   </li>
                 ))}
               </ul>

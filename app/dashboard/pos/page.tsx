@@ -7,7 +7,13 @@ export default async function PosPage() {
   // ponytail: single-tenant MVP, admin login isn't bound to a restaurant yet — use the first one
   const restaurant = await prisma.restaurant.findFirst({
     orderBy: { createdAt: "asc" },
-    include: { products: { where: { active: true }, orderBy: { name: "asc" } } },
+    include: {
+      products: {
+        where: { active: true },
+        orderBy: { name: "asc" },
+        include: { variants: { where: { isDefault: true }, take: 1 } },
+      },
+    },
   });
 
   if (!restaurant) {
@@ -21,11 +27,13 @@ export default async function PosPage() {
   return (
     <PosClient
       restaurantId={restaurant.id}
-      products={restaurant.products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        price: Number(p.price),
-      }))}
+      products={restaurant.products
+        .filter((p) => p.variants[0])
+        .map((p) => ({
+          variantId: p.variants[0].id,
+          name: p.name,
+          price: Number(p.variants[0].price),
+        }))}
     />
   );
 }

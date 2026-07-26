@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { createPosOrder } from "./actions";
 
-type Product = { id: string; name: string; price: number };
-type LineItem = { productId: string; name: string; price: number; qty: number };
+type Product = { variantId: string; name: string; price: number };
+type LineItem = { variantId: string; name: string; price: number; qty: number };
 
 export function PosClient({
   restaurantId,
@@ -27,18 +27,18 @@ export function PosClient({
 
   function addItem(product: Product) {
     setItems((prev) => {
-      const existing = prev.find((i) => i.productId === product.id);
+      const existing = prev.find((i) => i.variantId === product.variantId);
       if (existing) {
         return prev.map((i) =>
-          i.productId === product.id ? { ...i, qty: i.qty + 1 } : i,
+          i.variantId === product.variantId ? { ...i, qty: i.qty + 1 } : i,
         );
       }
-      return [...prev, { productId: product.id, name: product.name, price: product.price, qty: 1 }];
+      return [...prev, { variantId: product.variantId, name: product.name, price: product.price, qty: 1 }];
     });
   }
 
-  function removeItem(productId: string) {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
+  function removeItem(variantId: string) {
+    setItems((prev) => prev.filter((i) => i.variantId !== variantId));
   }
 
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -49,7 +49,7 @@ export function PosClient({
     try {
       const result = await createPosOrder({
         restaurantId,
-        items: items.map((i) => ({ productId: i.productId, qty: i.qty })),
+        items: items.map((i) => ({ variantId: i.variantId, qty: i.qty })),
         paymentMethod,
         customerPhone: customerPhone || undefined,
       });
@@ -99,7 +99,7 @@ export function PosClient({
           <h2 className="mb-3 font-semibold text-text-primary">Productos</h2>
           <ul className="grid grid-cols-2 gap-2">
             {products.map((p) => (
-              <li key={p.id}>
+              <li key={p.variantId}>
                 <button
                   onClick={() => addItem(p)}
                   className="w-full rounded border border-border px-3 py-2 text-left hover:border-primary hover:bg-primary-light"
@@ -125,7 +125,7 @@ export function PosClient({
               </li>
             )}
             {items.map((item) => (
-              <li key={item.productId} className="flex items-center justify-between py-2">
+              <li key={item.variantId} className="flex items-center justify-between py-2">
                 <span className="text-text-primary">
                   {item.qty}x {item.name}
                 </span>
@@ -134,7 +134,7 @@ export function PosClient({
                     ${item.price * item.qty}
                   </span>
                   <button
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(item.variantId)}
                     className="text-danger text-sm"
                   >
                     quitar
