@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import posthog from "posthog-js";
 import { HiCheckCircle, HiChatBubbleLeftRight, HiEye, HiEyeSlash } from "react-icons/hi2";
 import { FcGoogle } from "react-icons/fc";
@@ -39,6 +39,7 @@ function LoginForm() {
     setGoogleLoading(true);
     posthog.capture("user_logged_in_google");
     try {
+      await signOut({ redirect: false });
       await signIn("google", { callbackUrl: searchParams.get("callbackUrl") ?? "/dashboard" });
     } catch (err) {
       console.error("[login] google signin failed", err);
@@ -52,6 +53,7 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     try {
+      await signOut({ redirect: false });
       const res = await signIn("credentials", {
         email,
         password,
