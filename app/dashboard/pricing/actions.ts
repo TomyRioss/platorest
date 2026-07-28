@@ -42,7 +42,7 @@ export async function subscribeToPro() {
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",
-        transaction_amount: isDev ? 1 : PLAN_PRO_PRICE_ARS,
+        transaction_amount: isDev ? 15 : PLAN_PRO_PRICE_ARS,
         currency_id: "ARS",
       },
     }),

@@ -255,7 +255,7 @@ export default function LandingPage() {
 
                 <div className="text-center">
                   <p className="text-6xl font-bold text-primary">
-                    $20.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
+                    $15<span className="text-2xl font-medium text-text-secondary">/mes</span>
                   </p>
                   <PromoCountdown className="mt-6" />
                   <Link
