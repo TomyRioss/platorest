@@ -28,23 +28,26 @@ export async function POST(req: Request) {
 
     const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        phone: phone || undefined,
+        passwordHash,
+      },
+    });
+
     const business = await prisma.business.create({
       data: {
         name: restaurantName,
         slug: businessSlug,
         trialEndsAt,
         plan: "trial",
+        ownerId: user.id,
         memberships: {
           create: {
             role: "OWNER",
-            user: {
-              create: {
-                email,
-                name,
-                phone: phone || undefined,
-                passwordHash,
-              },
-            },
+            userId: user.id,
           },
         },
       },

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
-import { Smartphone, ChevronDown, Headset, LogOut } from "lucide-react";
+import { Smartphone, ChevronDown, Headset, LogOut, Rocket } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,9 +29,10 @@ export default async function AdminLayout({
     : null;
 
   const business = membership?.business;
+  const isPro = business?.plan === "pro";
 
   let trialDaysLeft: number | null = null;
-  if (business?.trialEndsAt) {
+  if (!isPro && business?.trialEndsAt) {
     const diff = new Date(business.trialEndsAt).getTime() - Date.now();
     trialDaysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
@@ -45,21 +47,38 @@ export default async function AdminLayout({
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface">
       <header className="z-10 flex h-16 shrink-0 items-center bg-primary shadow-md">
-        <div className="flex h-full w-56 shrink-0 flex-col justify-center px-5">
-          <div className="flex items-center gap-1.5">
-            <span className="text-2xl font-medium tracking-normal text-white">
-              PlatoRest
-            </span>
-          </div>
-          {trialDaysLeft !== null && (
-            <span className="mt-0.5 text-[11px] font-semibold text-yellow-300">
-              {trialDaysLeft > 0
-                ? `⏳ ${trialDaysLeft} días de prueba`
-                : "⚠️ Trial expirado"}
-            </span>
-          )}
+        <div className="flex h-full shrink-0 items-center pl-5">
+          <span className="text-3xl font-medium tracking-normal text-white">
+            PlatoRest
+          </span>
         </div>
-        <div className="flex h-16 flex-1 items-center justify-end pl-6">
+        <div className="flex h-16 flex-1 items-center pl-8">
+          <div className="flex flex-col items-start gap-0.5">
+            {isPro ? (
+              <span className="text-xs font-semibold text-white/70">
+                Plan Pro activo
+              </span>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard/pricing"
+                  className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-white/90"
+                >
+                  <Rocket className="h-3.5 w-3.5" />
+                  Mejorá tu plan
+                </Link>
+                {trialDaysLeft !== null && (
+                  <span className="text-xs font-semibold text-white/70">
+                    {trialDaysLeft > 0
+                      ? `${trialDaysLeft} días de prueba restantes`
+                      : "Trial expirado"}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex h-16 shrink-0 items-center justify-end pl-6">
           <a
             href="https://wa.me/5491171410652"
             target="_blank"

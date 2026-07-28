@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PLAN_PRO_PRICE_ARS } from "./pricing";
 
 export const SITE = {
   name: "PlatoRest",
@@ -147,7 +148,7 @@ export function softwareApplicationJsonLd() {
     ],
     offers: {
       "@type": "Offer",
-      price: "40000",
+      price: String(PLAN_PRO_PRICE_ARS),
       priceCurrency: "ARS",
       description: "Suscripción mensual, todo incluido. Demo gratis disponible.",
     },

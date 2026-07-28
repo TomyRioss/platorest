@@ -3,6 +3,12 @@ import Link from "next/link";
 import type { IconType } from "react-icons";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { SITE } from "@/lib/seo";
 
@@ -134,16 +140,29 @@ export function FaqSection({
 }) {
   return (
     <section className="border-t border-border bg-surface px-6 py-24">
-      <div className="mx-auto max-w-4xl">
-        <h2 className="text-3xl font-bold text-text-primary sm:text-4xl">{heading}</h2>
-        <div className="mt-10 space-y-8">
-          {faqs.map((f) => (
-            <div key={f.question}>
-              <h3 className="text-lg font-semibold text-text-primary">{f.question}</h3>
-              <p className="mt-2 leading-relaxed text-text-secondary">{f.answer}</p>
-            </div>
-          ))}
+      <div className="mx-auto max-w-3xl">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-text-primary sm:text-4xl">{heading}</h2>
+          <p className="mt-3 text-text-secondary">
+            Todo lo que necesitás saber antes de empezar.
+          </p>
         </div>
+        <Accordion className="mt-10 gap-3">
+          {faqs.map((f) => (
+            <AccordionItem
+              key={f.question}
+              value={f.question}
+              className="rounded-xl border border-border bg-white px-5 not-last:border-b"
+            >
+              <AccordionTrigger className="py-5 text-left text-base font-semibold text-text-primary sm:text-lg">
+                {f.question}
+              </AccordionTrigger>
+              <AccordionContent className="pb-5 text-base leading-relaxed text-text-secondary">
+                {f.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
       </div>
     </section>
   );

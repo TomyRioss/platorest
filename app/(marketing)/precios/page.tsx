@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { SITE } from "@/lib/seo";
+import { PromoCountdown } from "@/components/promo-countdown";
 
 const INCLUDED = [
   "Smart POS ilimitado",
@@ -56,11 +57,12 @@ export default function PreciosPage() {
                 Suscripción mensual
               </p>
               <p className="mt-3 text-6xl font-bold text-primary">
-                $40.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
+                $20.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
               </p>
               <p className="mt-3 text-base font-semibold text-primary">
                 Un plan, todo incluido.
               </p>
+              <PromoCountdown className="mt-6" />
               <Link
                 href={`mailto:${SITE.email}`}
                 className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}

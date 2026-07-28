@@ -7,13 +7,14 @@ import "react-international-phone/style.css";
 import { HiArrowRight } from "react-icons/hi2";
 import AddressAutocomplete from "./AddressAutocomplete";
 
-export default function OnboardingForm() {
+export default function OnboardingForm({ initialName = "" }: { initialName?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const skipContact = searchParams.get("skip") === "contact";
   const [step, setStep] = useState<1 | 2>(skipContact ? 2 : 1);
+  const hasName = Boolean(initialName);
 
-  const [fullName, setFullName] = useState("");
+  const [fullName, setFullName] = useState(initialName);
   const [phone, setPhone] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
 
@@ -58,7 +59,9 @@ export default function OnboardingForm() {
         </h1>
         <p className="mt-2 text-text-secondary">
           {step === 1
-            ? "No lo encontramos en Google. Ingresá estos datos para que tus clientes puedan reconocerte."
+            ? hasName
+              ? "Ingresá estos datos para que tus clientes puedan reconocerte."
+              : "No lo encontramos en Google. Ingresá estos datos para que tus clientes puedan reconocerte."
             : "Buscá tu dirección para que tus clientes puedan ubicarte."}
         </p>
 
@@ -84,23 +87,25 @@ export default function OnboardingForm() {
                   />
                 </div>
 
-                <div className="relative">
-                  <label
-                    htmlFor="fullName"
-                    className="absolute -top-2 left-3 z-10 bg-background px-1 text-xs text-text-secondary"
-                  >
-                    Nombre completo
-                  </label>
-                  <input
-                    id="fullName"
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Juan Pérez"
-                    className="w-full rounded-lg border border-border px-3 py-3 text-text-primary outline-none transition focus:border-primary"
-                  />
-                </div>
+                {!hasName && (
+                  <div className="relative">
+                    <label
+                      htmlFor="fullName"
+                      className="absolute -top-2 left-3 z-10 bg-background px-1 text-xs text-text-secondary"
+                    >
+                      Nombre completo
+                    </label>
+                    <input
+                      id="fullName"
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Juan Pérez"
+                      className="w-full rounded-lg border border-border px-3 py-3 text-text-primary outline-none transition focus:border-primary"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <div className="relative">

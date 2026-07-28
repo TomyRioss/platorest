@@ -17,7 +17,7 @@ export default async function OnboardingPage() {
 
   return (
     <Suspense>
-      <OnboardingForm />
+      <OnboardingForm initialName={session?.user?.name ?? ""} />
     </Suspense>
   );
 }

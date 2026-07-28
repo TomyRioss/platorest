@@ -50,6 +50,7 @@ export async function POST(req: Request) {
           slug: businessSlug,
           trialEndsAt,
           plan: "trial",
+          ownerId: user.id,
           memberships: { create: { role: "OWNER", userId: user.id } },
         },
       });

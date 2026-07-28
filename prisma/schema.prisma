@@ -10,11 +10,15 @@ datasource db {
 
 model Business {
   id            String         @id @default(cuid())
+  ownerId       String
+  owner         User           @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   name          String
   slug          String         @unique
   logo          String?
   trialEndsAt   DateTime?
   plan          String         @default("trial")
+  mpSubscriptionId String?     @unique
+  proStartedAt  DateTime?
   createdAt     DateTime       @default(now())
   restaurants   Restaurant[]
   memberships   Membership[]
@@ -97,6 +101,7 @@ model User {
   accounts         Account[]
   sessions         Session[]
   memberships      Membership[]
+  businessesOwned  Business[]        @relation("BusinessOwner")
   customers        Customer[]
   ordersCreated    Order[]           @relation("OrderCreatedBy")
   registerSessions RegisterSession[]
@@ -141,7 +146,7 @@ model VerificationToken {
 model Membership {
   id           String      @id @default(cuid())
   userId       String
-  user         User        @relation(fields: [userId], references: [id])
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessId   String
   business     Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   // null = access to every branch of the business

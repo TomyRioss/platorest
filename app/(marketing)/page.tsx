@@ -13,6 +13,7 @@ import {
 } from "@/lib/seo";
 import { FaqSection } from "./_components/sections";
 import LeadForm from "./_components/LeadForm";
+import { PromoCountdown } from "@/components/promo-countdown";
 
 const DESCRIPTION =
   "PlatoRest es el menú digital con QR y sistema gastronómico para restaurantes en Buenos Aires y toda Argentina: carta digital, pedidos online sin comisiones, punto de venta, inventario, estadísticas y fidelización en un solo lugar.";
@@ -45,9 +46,9 @@ const HOME_FAQS = [
       "Sí. PlatoRest funciona en CABA, GBA y cualquier provincia de Argentina porque es 100% online. El soporte es 24/7, incluidos feriados y fines de semana, con atención presencial en CABA y Gran Buenos Aires.",
   },
   {
-    question: "¿Puedo probar el menú digital antes de pagar?",
+    question: "¿Puedo probarlo antes de empezar?",
     answer:
-      "Sí. Podés agendar una demo personalizada gratuita de 15 minutos o acceder a un menú de ejemplo en vivo. Te dejamos tu carta digital configurada en menos de 24 horas.",
+      "Sí, tenés una prueba de 14 días gratuita al registrarte para probar el sistema.",
   },
 ];
 
@@ -254,8 +255,9 @@ export default function LandingPage() {
 
                 <div className="text-center">
                   <p className="text-6xl font-bold text-primary">
-                    $40.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
+                    $20.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
                   </p>
+                  <PromoCountdown className="mt-6" />
                   <Link
                     href="/register"
                     className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}
@@ -268,11 +270,6 @@ export default function LandingPage() {
           </div>
         </section>
       )}
-
-      <FaqSection
-        heading="Preguntas frecuentes sobre PlatoRest"
-        faqs={HOME_FAQS}
-      />
 
       <section id="contacto" className="bg-primary px-6 py-24 text-white scroll-mt-20">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
@@ -290,6 +287,11 @@ export default function LandingPage() {
           </Card>
         </div>
       </section>
+
+      <FaqSection
+        heading="Preguntas frecuentes sobre PlatoRest"
+        faqs={HOME_FAQS}
+      />
     </main>
   );
 }
