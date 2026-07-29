@@ -7,7 +7,7 @@ import { HiCheckCircle, HiChatBubbleLeftRight, HiEye, HiEyeSlash } from "react-i
 import { FcGoogle } from "react-icons/fc";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import posthog from "posthog-js";
 
 const BENEFITS = [
@@ -58,6 +58,7 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
+      await signOut({ redirect: false });
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -98,6 +99,7 @@ export default function RegisterPage() {
     setGoogleLoading(true);
     posthog.capture("user_signed_up_google");
     try {
+      await signOut({ redirect: false });
       // Google no da telefono/direccion/nombre restaurante, wizard completo los pide
       await signIn("google", { callbackUrl: "/onboarding" });
     } catch (err) {

@@ -412,7 +412,7 @@ model RegisterSession {
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   userId       String
-  user         User       @relation(fields: [userId], references: [id])
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   openedAt     DateTime   @default(now())
   closedAt     DateTime?
   openingCash  Decimal?
