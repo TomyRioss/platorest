@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UtensilsCrossed, Boxes, ChevronDown } from "lucide-react";
+import { Home, UtensilsCrossed, Gift, ChevronDown, Users, ClipboardList } from "lucide-react";
 import { isDev } from "@/lib/feature-scope";
+import { OnboardingWidget } from "./onboarding-widget";
+import type { OnboardingProgress } from "@/lib/onboarding";
 
 type NavItem = { href: string; label: string };
 type NavGroup = { label: string; icon: React.ComponentType<{ className?: string }>; items: NavItem[]; scope?: "extra" };
@@ -17,20 +19,20 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/menu", label: "Menú de productos" },
       { href: "/dashboard/menu/landing", label: "Bienvenida y diseño" },
     ],
-
   },
   {
-    label: "Inventario",
-    icon: Boxes,
-    scope: "extra",
+    label: "Fidelización",
+    icon: Gift,
     items: [
-      { href: "/dashboard/inventario", label: "Inventario" },
-      { href: "/dashboard/inventario/carta", label: "Carta" },
+      { href: "/dashboard/fidelizacion/tienda-puntos", label: "Tienda de puntos" },
+      { href: "/dashboard/fidelizacion/regalos", label: "Regalos por visita" },
+      { href: "/dashboard/fidelizacion/encuestas", label: "Encuestas" },
+      { href: "/dashboard/fidelizacion/conversion", label: "Configurar Conversión" },
     ],
   },
 ];
 
-export function SidebarNav() {
+export function SidebarNav({ onboarding }: { onboarding?: OnboardingProgress | null }) {
   const pathname = usePathname();
   const visibleGroups = NAV_GROUPS.filter((g) => g.scope !== "extra" || isDev());
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
@@ -57,6 +59,25 @@ export function SidebarNav() {
 
   return (
     <nav className="flex flex-1 flex-col gap-2 px-2">
+      {onboarding && <OnboardingWidget progress={onboarding} variant="compact" />}
+      <Link
+        href="/dashboard"
+        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+          pathname === "/dashboard" ? "bg-white/15 text-white" : "text-white hover:bg-white/10"
+        }`}
+      >
+        <Home className="h-4.5 w-4.5" />
+        <span className="flex-1 text-left">Inicio</span>
+      </Link>
+      <Link
+        href="/dashboard/pedidos"
+        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+          pathname.startsWith("/dashboard/pedidos") ? "bg-white/15 text-white" : "text-white hover:bg-white/10"
+        }`}
+      >
+        <ClipboardList className="h-4.5 w-4.5" />
+        <span className="flex-1 text-left">Pedidos</span>
+      </Link>
       {visibleGroups.map((group) => {
         const Icon = group.icon;
         const isOpen = openGroups.has(group.label);
@@ -101,6 +122,15 @@ export function SidebarNav() {
           </div>
         );
       })}
+      <Link
+        href="/dashboard/clientes"
+        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+          pathname.startsWith("/dashboard/clientes") ? "bg-white/15 text-white" : "text-white hover:bg-white/10"
+        }`}
+      >
+        <Users className="h-4.5 w-4.5" />
+        <span className="flex-1 text-left">Clientes</span>
+      </Link>
     </nav>
   );
 }
