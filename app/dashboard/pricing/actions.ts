@@ -5,7 +5,15 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PLAN_PRO_PRICE_ARS } from "@/lib/pricing";
 
-export async function subscribeToPro() {
+async function fetchWithRetry(url: string, init: RequestInit, retries = 3): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, init);
+    if (res.ok || attempt >= retries) return res;
+    await new Promise((r) => setTimeout(r, 2 ** attempt * 500));
+  }
+}
+
+export async function subscribeToPro(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -17,6 +25,9 @@ export async function subscribeToPro() {
   const business = membership?.business;
   if (!business) redirect("/dashboard");
 
+  const payerEmail = (formData.get("mpEmail") as string | null)?.trim() || session.user.email;
+  if (!payerEmail) throw new Error("Ingresá el email de tu cuenta de MercadoPago");
+
   const isDev = process.env.NEXT_PUBLIC_ISDEV === "true";
   const accessToken = isDev
     ? process.env.MERCADOPAGO_ACCESS_TOKEN_TEST
@@ -27,7 +38,7 @@ export async function subscribeToPro() {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://platorest.com";
 
-  const res = await fetch("https://api.mercadopago.com/preapproval", {
+  const res = await fetchWithRetry("https://api.mercadopago.com/preapproval", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -36,7 +47,7 @@ export async function subscribeToPro() {
     body: JSON.stringify({
       reason: "PlatoRest Plan Pro",
       external_reference: business.id,
-      payer_email: session.user.email,
+      payer_email: payerEmail,
       back_url: `${appUrl}/dashboard/pricing`,
       notification_url: `${appUrl}/api/webhooks/mercadopago`,
       auto_recurring: {

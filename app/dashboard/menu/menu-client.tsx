@@ -65,6 +65,7 @@ export function MenuClient({
   restaurantLogo,
   restaurantBanner,
   categories: initialCategories,
+  readOnly = false,
 }: {
   restaurantId: string;
   restaurantSlug: string;
@@ -72,6 +73,7 @@ export function MenuClient({
   restaurantLogo: string | null;
   restaurantBanner: string | null;
   categories: Category[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const pinFeatured = (list: Category[]) =>
@@ -321,6 +323,18 @@ export function MenuClient({
 
   return (
     <main className="min-h-screen bg-surface p-4 md:p-6">
+      {readOnly && (
+        <div className="mb-4 rounded-lg border border-primary/30 bg-primary-light px-4 py-3 text-sm font-medium text-primary">
+          Tu prueba gratuita terminó. Suscribite para volver a editar el menú.{" "}
+          <a href="/dashboard/pricing" className="underline underline-offset-2">
+            Mejorá tu plan
+          </a>
+        </div>
+      )}
+      <div
+        className={readOnly ? "pointer-events-none select-none opacity-60" : undefined}
+        aria-disabled={readOnly}
+      >
       <div className="grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_375px]">
       <div className="w-full">
         <div className="mb-4">
@@ -454,8 +468,8 @@ export function MenuClient({
             <SortableContext items={categories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
           {categories.map((category) => (
             <SortableCategoryRow key={category.id} categoryId={category.id}>
-              <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-2 sm:flex-nowrap sm:gap-3">
+                <div className="min-w-0 flex-1 basis-36">
                   <p className="flex items-center gap-1.5 text-xs text-text-secondary">
                     Nombre de categoría
                     {category.isFeatured && (
@@ -471,18 +485,18 @@ export function MenuClient({
                     className="w-full truncate border-b border-border bg-transparent pb-0.5 font-medium text-text-primary outline-none focus:border-primary"
                   />
                 </div>
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-medium text-text-secondary">
+                <span className="order-3 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-medium text-text-secondary sm:order-none">
                   {category.products.length}
                 </span>
                 <button
                   onClick={() => setDrawerState({ mode: "create", categoryId: category.id })}
-                  className="shrink-0 whitespace-nowrap rounded-full border border-primary px-3 py-1 text-xs font-medium text-primary hover:bg-primary-light"
+                  className="order-4 shrink-0 whitespace-nowrap rounded-full border border-primary px-3 py-1 text-xs font-medium text-primary hover:bg-primary-light sm:order-none"
                 >
                   + Producto
                 </button>
                 {!category.isFeatured && (
                   <DropdownMenu>
-                    <DropdownMenuTrigger className="shrink-0 rounded-full p-1 text-text-secondary outline-none hover:bg-background">
+                    <DropdownMenuTrigger className="order-5 shrink-0 rounded-full p-1 text-text-secondary outline-none hover:bg-background sm:order-none">
                       <MoreVertical className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -494,7 +508,7 @@ export function MenuClient({
                 )}
                 <button
                   onClick={() => toggleCategoryCollapsed(category.id)}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-text-secondary hover:text-primary"
+                  className="order-2 ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-text-secondary hover:text-primary sm:order-none sm:ml-0"
                 >
                   {collapsedCategoryIds.has(category.id) ? (
                     <ChevronDown className="h-4 w-4" />
@@ -663,6 +677,7 @@ export function MenuClient({
           </DropdownMenu>
         </div>
        </div>
+      </div>
       </div>
       </div>
       <ProductDrawer

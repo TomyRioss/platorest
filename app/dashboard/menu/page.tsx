@@ -1,12 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { ensureFeaturedCategory } from "@/lib/featured-category";
+import { requireBusinessId } from "@/lib/tenant";
 import { MenuClient } from "./menu-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function MenuPage() {
+  const businessId = await requireBusinessId();
   const restaurant = await prisma.restaurant.findFirst({
+    where: { businessId },
     orderBy: { createdAt: "asc" },
+    include: { business: { select: { plan: true, trialEndsAt: true } } },
   });
   if (!restaurant) {
     return (
@@ -39,8 +43,13 @@ export default async function MenuPage() {
     },
   });
 
+  const isPro = restaurant.business.plan === "pro";
+  const trialExpired = !!restaurant.business.trialEndsAt && restaurant.business.trialEndsAt.getTime() < Date.now();
+  const readOnly = !isPro && trialExpired;
+
   return (
     <MenuClient
+      readOnly={readOnly}
       restaurantId={restaurant.id}
       restaurantSlug={restaurant.slug}
       restaurantName={restaurant.name}

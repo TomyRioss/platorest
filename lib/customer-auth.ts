@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/customer-auth-config";
 import { prisma } from "@/lib/prisma";
 
 export async function getOrCreateCustomer(businessId: string) {

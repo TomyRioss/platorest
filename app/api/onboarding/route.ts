@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
+import { DEFAULT_PRODUCTS } from "@/lib/default-products";
+import { ensureFeaturedCategory } from "@/lib/featured-category";
+import { seedDefaultRewards } from "@/lib/default-rewards";
 import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(req: Request) {
@@ -59,6 +62,8 @@ export async function POST(req: Request) {
         where: { businessId: business.id, userId: user.id },
         include: { business: true },
       });
+
+      await seedDefaultRewards(business.id);
     }
 
     const existingRestaurant = await prisma.restaurant.findFirst({
@@ -94,6 +99,53 @@ export async function POST(req: Request) {
         sortOrder,
       })),
     });
+
+    await ensureFeaturedCategory(restaurant.id);
+
+    const categories = await prisma.category.findMany({
+      where: { restaurantId: restaurant.id },
+      select: { id: true, name: true },
+    });
+    const categoryIdByName = new Map(categories.map((c) => [c.name, c.id]));
+
+    await Promise.all(
+      DEFAULT_PRODUCTS.map(async (p) => {
+        const product = await prisma.product.create({
+          data: {
+            restaurantId: restaurant.id,
+            categoryId: categoryIdByName.get(p.categoryName) ?? null,
+            name: p.name,
+            description: p.description,
+            imageUrl: p.imageUrl,
+            variants: {
+              create: { name: "Único", price: p.price, isDefault: true },
+            },
+          },
+        });
+
+        for (const [i, mg] of (p.modifierGroups ?? []).entries()) {
+          await prisma.modifierGroup.create({
+            data: {
+              restaurantId: restaurant.id,
+              name: mg.name,
+              required: mg.required,
+              multiple: mg.multiple,
+              sortOrder: i,
+              modifiers: {
+                create: mg.options.map((o, j) => ({
+                  name: o.name,
+                  price: o.price ?? 0,
+                  sortOrder: j,
+                })),
+              },
+              products: {
+                create: { productId: product.id, sortOrder: i },
+              },
+            },
+          });
+        }
+      }),
+    );
 
     const ph = getPostHogClient();
     if (ph) {

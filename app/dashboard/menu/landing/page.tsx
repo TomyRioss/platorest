@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { requireBusinessId } from "@/lib/tenant";
 import { DesignClient } from "./design-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function DesignPage() {
+  const businessId = await requireBusinessId();
   const restaurant = await prisma.restaurant.findFirst({
+    where: { businessId },
     orderBy: { createdAt: "asc" },
     include: {
       business: {

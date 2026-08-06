@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { decrementStockOrThrow } from "@/lib/stock";
 import { pointsForTotal } from "@/lib/loyalty";
 import { revalidatePath } from "next/cache";
+import { assertOwnsRestaurant } from "@/lib/tenant";
 
 const ORDER_STATUSES = [
   "PENDING",
@@ -21,11 +22,13 @@ export async function updateOrderStatus(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: true },
+    include: { items: true, restaurant: { select: { businessId: true } } },
   });
   if (!order) return { ok: false, error: "Pedido no encontrado." };
 
   try {
+    await assertOwnsRestaurant(order.restaurantId);
+
     await prisma.$transaction(async (tx) => {
       // V4: stock decrements when order first leaves PENDING toward fulfillment
       const advancesPastPending =
@@ -46,7 +49,7 @@ export async function updateOrderStatus(
 
       // V5: loyaltyPoints only awarded once, on completed paid order
       if (order.status !== "COMPLETED" && newStatus === "COMPLETED" && order.customerId) {
-        const points = pointsForTotal(Number(order.total));
+        const points = await pointsForTotal(Number(order.total), order.restaurant.businessId, tx);
         if (points > 0) {
           await tx.pointsTransaction.create({
             data: { customerId: order.customerId, points, reason: "ORDER", orderId: order.id },

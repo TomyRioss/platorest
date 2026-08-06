@@ -5,8 +5,24 @@ import { revalidatePath } from "next/cache";
 import { supabaseAdmin, RESTAURANT_ASSETS_BUCKET } from "@/lib/supabase-admin";
 import { SocialPlatform } from "@prisma/client";
 import { slugify } from "@/lib/slug";
+import { assertOwnsRestaurant, assertOwnsBusiness } from "@/lib/tenant";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
+
+async function restaurantIdOfCategory(categoryId: string) {
+  const c = await prisma.category.findUnique({ where: { id: categoryId }, select: { restaurantId: true } });
+  return c?.restaurantId ?? null;
+}
+
+async function restaurantIdOfProduct(productId: string) {
+  const p = await prisma.product.findUnique({ where: { id: productId }, select: { restaurantId: true } });
+  return p?.restaurantId ?? null;
+}
+
+async function restaurantIdOfModifierGroup(modifierGroupId: string) {
+  const g = await prisma.modifierGroup.findUnique({ where: { id: modifierGroupId }, select: { restaurantId: true } });
+  return g?.restaurantId ?? null;
+}
 
 // ponytail: short goo.gl/maps.app.goo.gl links redirect before revealing lat/lng; resolve server-side (client fetch would hit CORS)
 export async function resolveMapsShortLink(url: string): Promise<string | null> {
@@ -24,6 +40,7 @@ export async function updateSocialLink(
   url: string,
 ): Promise<ActionResult> {
   try {
+    await assertOwnsBusiness(businessId);
     if (!url.trim()) {
       await prisma.socialLink.deleteMany({ where: { businessId, platform } });
     } else {
@@ -46,6 +63,7 @@ export async function createCategory(
 ): Promise<ActionResult> {
   if (!name.trim()) return { ok: false, error: "Nombre requerido." };
   try {
+    await assertOwnsRestaurant(restaurantId);
     await prisma.category.create({ data: { restaurantId, name: name.trim() } });
   } catch {
     return { ok: false, error: "Error al crear categoría." };
@@ -57,6 +75,9 @@ export async function createCategory(
 export async function renameCategory(categoryId: string, name: string): Promise<ActionResult> {
   if (!name.trim()) return { ok: false, error: "Nombre requerido." };
   try {
+    const restaurantId = await restaurantIdOfCategory(categoryId);
+    if (!restaurantId) return { ok: false, error: "Categoría no encontrada." };
+    await assertOwnsRestaurant(restaurantId);
     await prisma.category.update({ where: { id: categoryId }, data: { name: name.trim() } });
   } catch {
     return { ok: false, error: "No se pudo renombrar." };
@@ -67,6 +88,15 @@ export async function renameCategory(categoryId: string, name: string): Promise<
 
 export async function reorderCategories(categoryIds: string[]): Promise<ActionResult> {
   try {
+    const categories = await prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+      select: { id: true, restaurantId: true },
+    });
+    if (categories.length !== categoryIds.length) return { ok: false, error: "Categoría no encontrada." };
+    const restaurantIds = new Set(categories.map((c) => c.restaurantId));
+    if (restaurantIds.size !== 1) return { ok: false, error: "No autorizado." };
+    await assertOwnsRestaurant([...restaurantIds][0]);
+
     await prisma.$transaction(
       categoryIds.map((id, index) =>
         prisma.category.update({ where: { id }, data: { sortOrder: index } }),
@@ -82,7 +112,9 @@ export async function reorderCategories(categoryIds: string[]): Promise<ActionRe
 export async function deleteCategory(categoryId: string): Promise<ActionResult> {
   try {
     const category = await prisma.category.findUnique({ where: { id: categoryId } });
-    if (category?.isFeatured) return { ok: false, error: "No se puede borrar la categoría destacada." };
+    if (!category) return { ok: false, error: "Categoría no encontrada." };
+    await assertOwnsRestaurant(category.restaurantId);
+    if (category.isFeatured) return { ok: false, error: "No se puede borrar la categoría destacada." };
     await prisma.category.delete({ where: { id: categoryId } });
   } catch {
     return { ok: false, error: "No se pudo borrar (tiene productos asociados)." };
@@ -124,6 +156,12 @@ export async function saveProduct(input: SaveProductInput): Promise<SaveProductR
   }
 
   try {
+    await assertOwnsRestaurant(input.restaurantId);
+    if (input.productId) {
+      const existingRestaurantId = await restaurantIdOfProduct(input.productId);
+      if (existingRestaurantId !== input.restaurantId) return { ok: false, error: "No autorizado." };
+    }
+
     const productId = await prisma.$transaction(async (tx) => {
       let id = input.productId;
       if (id) {
@@ -191,6 +229,10 @@ export async function saveModifierGroup(
 ): Promise<ActionResult> {
   if (!input.name.trim()) return { ok: false, error: "Nombre requerido." };
   try {
+    await assertOwnsRestaurant(restaurantId);
+    const productRestaurantId = await restaurantIdOfProduct(productId);
+    if (productRestaurantId !== restaurantId) return { ok: false, error: "No autorizado." };
+
     await prisma.$transaction(async (tx) => {
       let groupId = input.id;
       if (groupId) {
@@ -238,6 +280,9 @@ export async function saveModifierGroup(
 
 export async function deleteModifierGroup(groupId: string): Promise<ActionResult> {
   try {
+    const restaurantId = await restaurantIdOfModifierGroup(groupId);
+    if (!restaurantId) return { ok: false, error: "Grupo no encontrado." };
+    await assertOwnsRestaurant(restaurantId);
     await prisma.modifierGroup.delete({ where: { id: groupId } });
   } catch {
     return { ok: false, error: "No se pudo borrar el grupo." };
@@ -251,6 +296,9 @@ export async function unlinkModifierGroupFromProduct(
   modifierGroupId: string,
 ): Promise<ActionResult> {
   try {
+    const restaurantId = await restaurantIdOfProduct(productId);
+    if (!restaurantId) return { ok: false, error: "Producto no encontrado." };
+    await assertOwnsRestaurant(restaurantId);
     await prisma.productModifierGroup.delete({
       where: { productId_modifierGroupId: { productId, modifierGroupId } },
     });
@@ -267,6 +315,7 @@ export async function getProductsForModifierGroup(
   restaurantId: string,
   modifierGroupId: string,
 ): Promise<ProductForAssociation[]> {
+  await assertOwnsRestaurant(restaurantId);
   const [products, links] = await Promise.all([
     prisma.product.findMany({
       where: { restaurantId },
@@ -290,6 +339,9 @@ export async function setModifierGroupProductLink(
   linked: boolean,
 ): Promise<ActionResult> {
   try {
+    const restaurantId = await restaurantIdOfProduct(productId);
+    if (!restaurantId) return { ok: false, error: "Producto no encontrado." };
+    await assertOwnsRestaurant(restaurantId);
     if (linked) {
       await prisma.productModifierGroup.upsert({
         where: { productId_modifierGroupId: { productId, modifierGroupId } },
@@ -313,6 +365,7 @@ export async function duplicateProduct(productId: string): Promise<ActionResult>
       include: { variants: true },
     });
     if (!product) return { ok: false, error: "Producto no encontrado." };
+    await assertOwnsRestaurant(product.restaurantId);
     await prisma.product.create({
       data: {
         restaurantId: product.restaurantId,
@@ -342,6 +395,14 @@ export async function moveProductCategory(
   categoryId: string,
 ): Promise<ActionResult> {
   try {
+    const [productRestaurantId, categoryRestaurantId] = await Promise.all([
+      restaurantIdOfProduct(productId),
+      restaurantIdOfCategory(categoryId),
+    ]);
+    if (!productRestaurantId || productRestaurantId !== categoryRestaurantId) {
+      return { ok: false, error: "No autorizado." };
+    }
+    await assertOwnsRestaurant(productRestaurantId);
     await prisma.product.update({ where: { id: productId }, data: { categoryId } });
   } catch {
     return { ok: false, error: "No se pudo mover el producto." };
@@ -355,6 +416,9 @@ export async function toggleProductActive(
   active: boolean,
 ): Promise<ActionResult> {
   try {
+    const restaurantId = await restaurantIdOfProduct(productId);
+    if (!restaurantId) return { ok: false, error: "Producto no encontrado." };
+    await assertOwnsRestaurant(restaurantId);
     await prisma.product.update({ where: { id: productId }, data: { active } });
   } catch {
     return { ok: false, error: "Error al actualizar producto." };
@@ -370,6 +434,12 @@ export async function uploadRestaurantAsset(
   kind: "logo" | "banner",
   dataUrl: string,
 ): Promise<UploadResult> {
+  try {
+    await assertOwnsRestaurant(restaurantId);
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+
   const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
   if (!match) return { ok: false, error: "Imagen inválida." };
   const [, mimeType, base64] = match;
@@ -401,6 +471,7 @@ export async function updateRestaurant(
     return { ok: false, error: "Nombre requerido." };
   }
   try {
+    await assertOwnsRestaurant(restaurantId);
     const updated = await prisma.restaurant.update({
       where: { id: restaurantId },
       data: {
@@ -434,6 +505,7 @@ export async function saveOpeningHours(
     }
   }
   try {
+    await assertOwnsRestaurant(restaurantId);
     await prisma.$transaction([
       prisma.restaurant.update({ where: { id: restaurantId }, data: { timezone } }),
       prisma.openingHours.deleteMany({ where: { restaurantId } }),
@@ -456,6 +528,7 @@ export async function createBranch(
 ): Promise<ActionResult & { branch?: { id: string; name: string; slug: string; address: string | null; lat: number | null; lng: number | null } }> {
   if (!name.trim()) return { ok: false, error: "Nombre requerido." };
   try {
+    await assertOwnsBusiness(businessId);
     const baseSlug = slugify(name) || "sucursal";
     let slug = baseSlug;
     let suffix = 1;
@@ -476,6 +549,7 @@ export async function createBranch(
 
 export async function deleteBranch(restaurantId: string): Promise<ActionResult> {
   try {
+    await assertOwnsRestaurant(restaurantId);
     const existing = await prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { businessId: true, business: { select: { slug: true } } } });
     const count = await prisma.restaurant.count({ where: { businessId: existing?.businessId } });
     if (count <= 1) return { ok: false, error: "No podés borrar la única sucursal." };
@@ -493,6 +567,14 @@ export async function uploadProductImage(
   productId: string,
   dataUrl: string,
 ): Promise<UploadResult> {
+  try {
+    await assertOwnsRestaurant(restaurantId);
+    const productRestaurantId = await restaurantIdOfProduct(productId);
+    if (productRestaurantId !== restaurantId) return { ok: false, error: "No autorizado." };
+  } catch {
+    return { ok: false, error: "No autorizado." };
+  }
+
   const match = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
   if (!match) return { ok: false, error: "Imagen inválida." };
   const [, mimeType, base64] = match;
@@ -514,6 +596,9 @@ export async function updateProductImage(
   imageUrl: string | null,
 ): Promise<ActionResult> {
   try {
+    const restaurantId = await restaurantIdOfProduct(productId);
+    if (!restaurantId) return { ok: false, error: "Producto no encontrado." };
+    await assertOwnsRestaurant(restaurantId);
     await prisma.product.update({ where: { id: productId }, data: { imageUrl } });
   } catch {
     return { ok: false, error: "No se pudo actualizar la imagen." };
@@ -524,6 +609,9 @@ export async function updateProductImage(
 
 export async function deleteProduct(productId: string): Promise<ActionResult> {
   try {
+    const restaurantId = await restaurantIdOfProduct(productId);
+    if (!restaurantId) return { ok: false, error: "Producto no encontrado." };
+    await assertOwnsRestaurant(restaurantId);
     await prisma.$transaction(async (tx) => {
       await tx.productVariant.deleteMany({ where: { productId } });
       await tx.product.delete({ where: { id: productId } });

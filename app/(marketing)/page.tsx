@@ -136,21 +136,10 @@ export default function LandingPage() {
         }}
       />
 
-      <header className="relative flex min-h-[640px] items-start justify-center overflow-hidden bg-orange-50 pt-16 pb-16 md:h-[70vh] md:pb-24">
-        <div className="absolute inset-y-0 right-0 hidden h-full w-[40%] md:block">
-          <Image
-            src="https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1200"
-            alt="Cocina de restaurante usando un sistema gastronómico"
-            fill
-            priority
-            sizes="40vw"
-            className="object-cover"
-          />
-        </div>
-
-        <div className="relative z-10 mx-auto flex h-full w-full max-w-6xl items-start justify-start px-6 md:w-[60%] md:pr-40">
-          <div className="max-w-xl pt-20">
-            <h1 className="text-balance text-2xl font-bold leading-[1.15] tracking-tight text-primary sm:text-3xl md:text-4xl">
+      <header className="relative flex flex-col overflow-hidden bg-orange-50 lg:h-[70vh] lg:flex-row">
+        <div className="relative z-10 flex flex-1 items-center px-6 pt-20 pb-12 lg:w-[50%] lg:py-0 lg:px-16">
+          <div>
+            <h1 className="text-balance text-2xl font-bold leading-[1.15] tracking-tight text-primary sm:text-3xl lg:text-4xl">
               Menú digital con QR y sistema gastronómico todo-en-uno para tu restaurante.
             </h1>
             <p className="mt-6 max-w-lg text-pretty text-lg text-text-secondary">
@@ -178,6 +167,17 @@ export default function LandingPage() {
           </div>
         </div>
 
+        <div className="relative h-72 w-full sm:h-96 lg:h-auto lg:w-[50%]">
+          <Image
+            src="https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1200"
+            alt="Cocina de restaurante usando un sistema gastronómico"
+            fill
+            priority
+            sizes="(min-width: 1024px) 42vw, 100vw"
+            className="object-cover"
+          />
+        </div>
+
         <div className="absolute -bottom-1 left-0 right-0 h-24 rounded-t-[100%] bg-surface md:h-32" />
       </header>
 
@@ -194,7 +194,7 @@ export default function LandingPage() {
             {FEATURES.map((f) => (
               <Card
                 key={f.title}
-                className="overflow-hidden rounded-xl border border-border bg-background"
+                className="overflow-hidden rounded-xl border border-border bg-background pt-0"
               >
                 <div className="relative h-48 w-full">
                   <Image
@@ -204,6 +204,11 @@ export default function LandingPage() {
                     sizes="(min-width: 768px) 33vw, 100vw"
                     className="object-cover"
                   />
+                  {f.title !== "Fidelización" && f.title !== "Menú digital" && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                      <span className="text-lg font-bold text-white">Próximamente</span>
+                    </div>
+                  )}
                 </div>
                 <CardContent className="p-6">
                   <h3 className="flex items-center gap-2 text-lg font-semibold text-primary">
@@ -228,13 +233,13 @@ export default function LandingPage() {
       {process.env.NEXT_PUBLIC_SHOW_PRICING === "true" && (
         <section className="px-6 py-32">
           <div className="mx-auto max-w-6xl">
-            <Card className="relative overflow-hidden rounded-3xl border-2 border-primary p-16 shadow-xl md:p-20">
+            <Card className="relative overflow-hidden rounded-3xl border-2 border-primary p-6 shadow-xl sm:p-10 md:p-16 lg:p-20">
               <CardContent className="grid grid-cols-1 items-center gap-12 p-0 lg:grid-cols-2">
                 <div>
                   <h2 className="text-4xl font-bold text-primary underline decoration-primary/40 underline-offset-8 sm:text-5xl">
-                    Plan fundadores
+                    Plan Promocional
                   </h2>
-                  <ul className="mt-8 space-y-4 text-xl">
+                  <ul className="mt-8 space-y-4 text-lg md:text-xl">
                     <li className="flex items-start gap-3 text-text-primary">
                       <span className="mt-1 text-primary">✓</span>
                       <span>Soporte 24/7 feriados y fines de semana</span>
@@ -249,13 +254,18 @@ export default function LandingPage() {
                     </li>
                   </ul>
                   <p className="mt-6 text-base text-text-secondary">
-                    Tiempo limitado, solo para nuestros primeros 100 clientes.
+                    Salida de nuestra primer versión privada
                   </p>
                 </div>
 
                 <div className="text-center">
-                  <p className="text-6xl font-bold text-primary">
-                    $25.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
+                  <p className="flex items-baseline justify-center gap-3">
+                    <span className="text-2xl font-medium text-text-secondary line-through">
+                      $45.000
+                    </span>
+                    <span className="text-4xl font-bold text-primary sm:text-5xl md:text-6xl">
+                      $19.900<span className="text-xl font-medium text-text-secondary md:text-2xl">/mes</span>
+                    </span>
                   </p>
                   <PromoCountdown className="mt-6" />
                   <Link

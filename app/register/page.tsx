@@ -111,8 +111,8 @@ export default function RegisterPage() {
 
   return (
     <main className="flex min-h-screen">
-      <div className="relative flex w-full items-center justify-center bg-background px-6 py-12 md:w-[60%]">
-        <Link href="/" className="absolute left-6 top-6 z-10 text-3xl font-bold text-primary md:left-8 md:top-8">
+      <div className="relative flex w-full items-center justify-center bg-background px-6 pb-12 pt-24 md:w-[60%] md:py-12">
+        <Link href="/" className="absolute left-6 top-6 z-10 text-2xl font-bold text-primary md:left-8 md:top-8 md:text-3xl">
           PlatoRest
         </Link>
 
@@ -128,9 +128,18 @@ export default function RegisterPage() {
         </a>
 
         <form onSubmit={handleSubmit} className="w-full max-w-lg">
-          <h1 className="text-3xl font-bold leading-tight text-text-primary">
+          <h1 className="text-2xl font-bold leading-tight text-text-primary md:text-3xl">
             Registrate en PlatoRest y empezá a recibir pedidos en minutos
           </h1>
+
+          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 md:hidden">
+            {BENEFITS.slice(0, 3).map((benefit) => (
+              <li key={benefit} className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
+                <HiCheckCircle className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+                <span>{benefit}</span>
+              </li>
+            ))}
+          </ul>
 
           <button
             type="button"
@@ -229,7 +238,7 @@ export default function RegisterPage() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
               <div>
                 <label htmlFor="password" className="mb-1 block text-sm font-medium text-text-primary">
                   Contraseña nueva

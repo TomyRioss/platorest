@@ -26,7 +26,9 @@ model Business {
   loyaltyConfig LoyaltyConfig?
   actions       LoyaltyAction[]
   rewards       Reward[]
+  rewardCategories RewardCategory[]
   socialLinks   SocialLink[]
+  surveyConfigs SurveyConfig[]
 }
 
 model SocialLink {
@@ -440,6 +442,7 @@ model Customer {
   actionCompletions ActionCompletion[]
   redemptions       Redemption[]
   surveys           Survey[]
+  surveyCompletions SurveyCompletion[]
 
   @@unique([businessId, phone])
   @@unique([businessId, userId])
@@ -492,29 +495,81 @@ model ActionCompletion {
   createdAt  DateTime      @default(now())
 }
 
+model RewardCategory {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int      @default(0)
+  isFeatured Boolean  @default(false)
+  rewards    Reward[]
+}
+
 model Reward {
   id             String   @id @default(cuid())
   businessId     String
   business       Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   name           String
   description    String?
-  // one of the two: points-store reward or visit-milestone gift
+  imageUrl       String?
+  categoryId     String?
+  category       RewardCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  // legacy: unused by the variant-based redeem flow, kept for the visit-milestone gift feature
   pointsCost     Int?
   visitMilestone Int?
   active         Boolean  @default(true)
+  variants       RewardVariant[]
+  modifierGroups RewardModifierGroup[]
   redemptions    Redemption[]
 }
 
+model RewardVariant {
+  id             String   @id @default(cuid())
+  rewardId       String
+  reward         Reward   @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  name           String   @default("Único")
+  sku            String?
+  pointsCost     Int
+  costPrice      Decimal?
+  packagingPrice Decimal?
+  isDefault      Boolean  @default(false)
+  redemptions Redemption[]
+}
+
+model RewardModifierGroup {
+  id        String @id @default(cuid())
+  rewardId  String
+  reward    Reward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  name      String
+  required  Boolean @default(false)
+  multiple  Boolean @default(false)
+  sortOrder Int    @default(0)
+  modifiers RewardModifier[]
+}
+
+model RewardModifier {
+  id                    String @id @default(cuid())
+  rewardModifierGroupId String
+  group      RewardModifierGroup @relation(fields: [rewardModifierGroupId], references: [id], onDelete: Cascade)
+  name       String
+  pointsCost Int    @default(0)
+  sortOrder  Int    @default(0)
+}
+
 model Redemption {
-  id         String           @id @default(cuid())
-  rewardId   String
-  reward     Reward           @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-  customerId String
-  customer   Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  code       String           @unique
-  status     RedemptionStatus @default(PENDING)
-  createdAt  DateTime         @default(now())
-  usedAt     DateTime?
+  id                String           @id @default(cuid())
+  rewardId          String
+  reward            Reward           @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  rewardVariantId   String?
+  rewardVariant     RewardVariant?   @relation(fields: [rewardVariantId], references: [id], onDelete: SetNull)
+  customerId        String
+  customer          Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  code              String           @unique
+  status            RedemptionStatus @default(PENDING)
+  selectedModifiers Json?
+  pointsSpent       Int              @default(0)
+  createdAt         DateTime         @default(now())
+  usedAt            DateTime?
 }
 
 enum RedemptionStatus {
@@ -537,6 +592,41 @@ model Survey {
   createdAt    DateTime   @default(now())
 
   @@index([restaurantId, createdAt])
+}
+
+enum SurveyType {
+  INTERNAL
+  EXTERNAL
+}
+
+model SurveyConfig {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  type        SurveyType
+  points      Int
+  active      Boolean  @default(false)
+  // solo EXTERNAL: link a reseña de Google Maps
+  externalUrl String?
+  completions SurveyCompletion[]
+
+  @@unique([businessId, type])
+}
+
+model SurveyCompletion {
+  id               String       @id @default(cuid())
+  surveyConfigId   String
+  surveyConfig     SurveyConfig @relation(fields: [surveyConfigId], references: [id], onDelete: Cascade)
+  customerId       String
+  customer         Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  // solo INTERNAL, 1-5
+  attentionRating  Int?
+  foodRating       Int?
+  experienceRating Int?
+  pointsAwarded    Int
+  createdAt        DateTime     @default(now())
+
+  @@unique([surveyConfigId, customerId])
 }
 
 // ── Audit ────────────────────────────────────────────────

@@ -1,8 +1,16 @@
-export default function ConversionPage() {
-  return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-xl font-semibold text-text-primary">Conversión Gasto/Puntos</h1>
-      <p className="text-text-secondary">Próximamente.</p>
-    </main>
-  );
+import { prisma } from "@/lib/prisma";
+import { requireBusinessId } from "@/lib/tenant";
+import { DEFAULT_PESOS_PER_POINT } from "@/lib/loyalty";
+import { ConversionClient } from "./conversion-client";
+
+export const dynamic = "force-dynamic";
+
+export default async function ConversionPage() {
+  const businessId = await requireBusinessId();
+
+  const config = await prisma.loyaltyConfig.findUnique({ where: { businessId } });
+  const pointsPerCurrency = config ? Number(config.pointsPerCurrency) : null;
+  const pesosPerPunto = pointsPerCurrency && pointsPerCurrency > 0 ? Math.round(1 / pointsPerCurrency) : DEFAULT_PESOS_PER_POINT;
+
+  return <ConversionClient businessId={businessId} initialPesosPerPunto={pesosPerPunto} />;
 }

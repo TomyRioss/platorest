@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { decrementStockOrThrow } from "@/lib/stock";
 import { pointsForTotal } from "@/lib/loyalty";
+import { assertOwnsRestaurant } from "@/lib/tenant";
 
 export type PosOrderInput = {
   restaurantId: string;
@@ -21,6 +22,12 @@ export async function createPosOrder(
 ): Promise<PosOrderResult> {
   if (input.items.length === 0) {
     return { ok: false, error: "Agregá al menos un producto." };
+  }
+
+  try {
+    await assertOwnsRestaurant(input.restaurantId);
+  } catch {
+    return { ok: false, error: "No autorizado." };
   }
 
   const restaurant = await prisma.restaurant.findUniqueOrThrow({
@@ -103,7 +110,7 @@ export async function createPosOrder(
 
     // V5: loyaltyPoints only awarded on completed paid order — POS orders are created COMPLETED
     if (customerId) {
-      const points = pointsForTotal(total);
+      const points = await pointsForTotal(total, restaurant.businessId, tx);
       if (points > 0) {
         await tx.pointsTransaction.create({
           data: { customerId, points, reason: "ORDER", orderId: order.id },

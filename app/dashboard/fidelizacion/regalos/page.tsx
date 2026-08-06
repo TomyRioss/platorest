@@ -1,8 +1,28 @@
-export default function RegalosPage() {
+import { prisma } from "@/lib/prisma";
+import { requireBusinessId } from "@/lib/tenant";
+import { RegalosClient } from "./regalos-client";
+
+export const dynamic = "force-dynamic";
+
+export default async function RegalosPage() {
+  const businessId = await requireBusinessId();
+
+  const rewards = await prisma.reward.findMany({
+    where: { businessId, visitMilestone: { not: null } },
+    orderBy: { visitMilestone: "asc" },
+  });
+
   return (
-    <main className="flex min-h-[60vh] flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-xl font-semibold text-text-primary">Regalos</h1>
-      <p className="text-text-secondary">Próximamente.</p>
-    </main>
+    <RegalosClient
+      businessId={businessId}
+      rewards={rewards.map((r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        imageUrl: r.imageUrl,
+        active: r.active,
+        visitMilestone: r.visitMilestone ?? 1,
+      }))}
+    />
   );
 }

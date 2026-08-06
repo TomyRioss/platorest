@@ -2,8 +2,11 @@ import posthog from "posthog-js";
 
 const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
 const host = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+const isLocalhost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
 
-if (!token) {
+if (isLocalhost) {
+  // ponytail: skip init entirely so no events/session recordings leak from local dev
+} else if (!token) {
   if (process.env.NODE_ENV !== "production") {
     console.error(
       "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN is configured"

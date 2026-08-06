@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { requireBusinessId } from "@/lib/tenant";
 import { PedidosClient } from "./pedidos-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function PedidosPage() {
+  const businessId = await requireBusinessId();
   const restaurant = await prisma.restaurant.findFirst({
+    where: { businessId },
     orderBy: { createdAt: "asc" },
   });
   if (!restaurant) {

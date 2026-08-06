@@ -3,6 +3,8 @@ import { PostHog } from "posthog-node";
 let client: PostHog | null = null;
 
 export function getPostHogClient(): PostHog | null {
+  if (process.env.NODE_ENV !== "production") return null; // ponytail: no events from local dev
+
   const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
   if (!token) {
     if (process.env.NODE_ENV !== "production") {

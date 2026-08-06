@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createProduct, updateVariantStock, toggleProductActive } from "./actions";
+import { formatMoney } from "@/lib/utils";
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -127,7 +128,7 @@ export function InventoryClient({
               <li key={p.id} className="flex flex-wrap items-center gap-3 p-4">
                 <div className="min-w-[120px] flex-1">
                   <p className="font-medium text-text-primary">{p.name}</p>
-                  <p className="text-sm text-text-secondary">${p.price}</p>
+                  <p className="text-sm text-text-secondary">${formatMoney(p.price)}</p>
                 </div>
 
                 <div className="flex items-center gap-2">

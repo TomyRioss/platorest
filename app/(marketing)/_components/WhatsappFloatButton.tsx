@@ -2,8 +2,8 @@ import { SITE } from "@/lib/seo";
 
 export default function WhatsappFloatButton() {
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2">
-      <div className="relative rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-lg">
+    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 md:bottom-6 md:right-6">
+      <div className="relative hidden rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-lg md:block">
         Agenda una demo guiada
         <span className="absolute right-[-6px] top-1/2 h-3 w-3 -translate-y-1/2 rotate-45 bg-white shadow-[2px_-2px_2px_0_rgba(0,0,0,0.05)]" />
       </div>
@@ -12,7 +12,7 @@ export default function WhatsappFloatButton() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Agenda una demo guiada por WhatsApp"
-        className="flex h-16 w-16 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:bg-[#128C7E]"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:bg-[#128C7E] md:h-16 md:w-16"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

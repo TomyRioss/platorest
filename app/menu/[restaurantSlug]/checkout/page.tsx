@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { HiArrowLeft } from "react-icons/hi2";
-import { getCart, clearCart, type Cart } from "@/lib/cart";
-import { createOrder } from "./actions";
+import { HiArrowLeft, HiCheckCircle, HiTrash } from "react-icons/hi2";
+import { FaWhatsapp } from "react-icons/fa6";
+import { getCart, clearCart, removeFromCart, type Cart } from "@/lib/cart";
+import { formatMoney } from "@/lib/utils";
+import { createOrder, type CheckoutResult } from "./actions";
 import posthog from "posthog-js";
 
 export default function CheckoutPage() {
@@ -23,6 +25,7 @@ export default function CheckoutPage() {
   );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<{ result: Extract<CheckoutResult, { ok: true }>; whatsappUrl: string | null } | null>(null);
 
   useEffect(() => {
     setCart(getCart());
@@ -30,6 +33,16 @@ export default function CheckoutPage() {
 
   function goBack() {
     router.push(`/menu/${restaurantSlug}`);
+  }
+
+  function handleRemoveItem(key: string) {
+    removeFromCart(key);
+    setCart(getCart());
+  }
+
+  function handleClearCart() {
+    clearCart();
+    setCart(getCart());
   }
 
   const total =
@@ -58,6 +71,7 @@ export default function CheckoutPage() {
       }
       clearCart();
 
+      let whatsappUrl: string | null = null;
       if (result.whatsappNumber) {
         const lines = [
           `¡Hola! Quiero confirmar mi pedido #${result.orderId.slice(-8)}:`,
@@ -71,16 +85,45 @@ export default function CheckoutPage() {
         ];
         const message = encodeURIComponent(lines.join("\n"));
         const phone = result.whatsappNumber.replace(/\D/g, "");
-        window.location.href = `https://wa.me/${phone}?text=${message}`;
-      } else {
-        router.push(`/menu/${restaurantSlug}`);
+        whatsappUrl = `https://wa.me/${phone}?text=${message}`;
       }
+      setSuccess({ result, whatsappUrl });
     } catch (err) {
       console.error("checkout error:", err);
       setError("Error al procesar el pedido. Intentá de nuevo.");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (success) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface px-4 text-center">
+        <HiCheckCircle className="h-16 w-16 text-primary" />
+        <h1 className="text-xl font-semibold text-text-primary">¡Pedido hecho!</h1>
+        <p className="text-text-secondary">
+          Tu pedido #{success.result.orderId.slice(-8)} fue recibido. Total: $
+          {success.result.total.toLocaleString("es-AR")}
+        </p>
+        {success.whatsappUrl && (
+          <a
+            href={success.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded bg-[#25D366] px-5 py-3 font-medium text-white hover:opacity-90"
+          >
+            <FaWhatsapp className="h-5 w-5" /> Avisar por WhatsApp
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={() => router.push(`/menu/${restaurantSlug}`)}
+          className="text-sm font-medium text-text-secondary hover:text-primary"
+        >
+          Volver al menú
+        </button>
+      </main>
+    );
   }
 
   if (!cart || cart.items.length === 0) {
@@ -118,20 +161,38 @@ export default function CheckoutPage() {
           </h1>
 
           <ul className="mb-4 divide-y divide-border">
-            {cart.items.map((item, index) => (
-              <li key={item.key ?? item.variantId ?? index} className="flex justify-between py-2">
-                <span className="text-text-primary">
-                  {item.qty}x {item.name}
-                </span>
-                <span className="text-text-secondary">
-                  ${item.price * item.qty}
-                </span>
-              </li>
-            ))}
+            {cart.items.map((item, index) => {
+              const key = item.key ?? item.variantId ?? String(index);
+              return (
+                <li key={key} className="flex items-center justify-between gap-2 py-2">
+                  <span className="text-text-primary">
+                    {item.qty}x {item.name}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-text-secondary">${formatMoney(item.price * item.qty)}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveItem(key)}
+                      aria-label={`Quitar ${item.name}`}
+                      className="text-text-secondary hover:text-danger"
+                    >
+                      <HiTrash className="h-4 w-4" />
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
           </ul>
-          <p className="mb-6 text-right font-semibold text-text-primary">
-            Total: ${total}
-          </p>
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleClearCart}
+              className="text-sm font-medium text-text-secondary hover:text-danger"
+            >
+              Vaciar carrito
+            </button>
+            <p className="font-semibold text-text-primary">Total: ${formatMoney(total)}</p>
+          </div>
 
           <label className="mb-1 block text-sm text-text-secondary">
             Nombre
@@ -140,23 +201,23 @@ export default function CheckoutPage() {
             required
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="mb-4 w-full rounded border border-border px-3 py-2 outline-none focus:border-primary"
+            className="mb-4 w-full rounded border border-border px-3 py-2.5 outline-none focus:border-primary"
           />
 
-          <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               type="tel"
               placeholder="Teléfono"
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
-              className="rounded border border-border px-3 py-2 outline-none focus:border-primary"
+              className="rounded border border-border px-3 py-2.5 outline-none focus:border-primary"
             />
             <input
               type="email"
               placeholder="Email"
               value={customerEmail}
               onChange={(e) => setCustomerEmail(e.target.value)}
-              className="rounded border border-border px-3 py-2 outline-none focus:border-primary"
+              className="rounded border border-border px-3 py-2.5 outline-none focus:border-primary"
             />
           </div>
 
@@ -164,7 +225,7 @@ export default function CheckoutPage() {
             Entrega
           </label>
           <div className="mb-4 flex gap-4">
-            <label className="flex items-center gap-2 text-text-primary">
+            <label className="flex items-center gap-2 py-1.5 text-text-primary">
               <input
                 type="radio"
                 checked={fulfillment === "PICKUP"}
@@ -172,7 +233,7 @@ export default function CheckoutPage() {
               />
               Retiro en local
             </label>
-            <label className="flex items-center gap-2 text-text-primary">
+            <label className="flex items-center gap-2 py-1.5 text-text-primary">
               <input
                 type="radio"
                 checked={fulfillment === "DELIVERY"}
@@ -188,13 +249,13 @@ export default function CheckoutPage() {
               placeholder="Dirección de entrega"
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
-              className="mb-4 w-full rounded border border-border px-3 py-2 outline-none focus:border-primary"
+              className="mb-4 w-full rounded border border-border px-3 py-2.5 outline-none focus:border-primary"
             />
           )}
 
           <label className="mb-1 block text-sm text-text-secondary">Pago</label>
           <div className="mb-6 flex gap-4">
-            <label className="flex items-center gap-2 text-text-primary">
+            <label className="flex items-center gap-2 py-1.5 text-text-primary">
               <input
                 type="radio"
                 checked={paymentMethod === "CASH"}
@@ -202,7 +263,7 @@ export default function CheckoutPage() {
               />
               Efectivo
             </label>
-            <label className="flex items-center gap-2 text-text-primary">
+            <label className="flex items-center gap-2 py-1.5 text-text-primary">
               <input
                 type="radio"
                 checked={paymentMethod === "MERCADOPAGO"}
@@ -221,7 +282,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded bg-primary px-4 py-2 font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+            className="w-full rounded bg-primary px-4 py-3 font-medium text-white hover:bg-primary-hover disabled:opacity-50"
           >
             {loading ? "Procesando..." : "Confirmar pedido"}
           </button>

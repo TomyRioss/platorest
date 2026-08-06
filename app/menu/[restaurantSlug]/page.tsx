@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { HiOutlineClock } from "react-icons/hi2";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { getOrCreateCustomer } from "@/lib/customer-auth";
 import { ensureFeaturedCategory } from "@/lib/featured-category";
 import { getOpenStatus } from "@/lib/opening-hours";
 import { restaurantMenuJsonLd } from "@/lib/seo";
@@ -41,24 +41,6 @@ export async function generateMetadata({
     },
     twitter: { card: "summary_large_image", title, description },
   };
-}
-
-async function getIsCustomerSession(businessId: string) {
-  const session = await auth();
-  if (!session?.user?.email) return false;
-
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return false;
-
-  const membership = await prisma.membership.findFirst({
-    where: { userId: user.id, businessId },
-  });
-  if (membership) return false;
-
-  const customer = await prisma.customer.findUnique({
-    where: { businessId_userId: { businessId, userId: user.id } },
-  });
-  return !!customer;
 }
 
 export default async function MenuPage({
@@ -120,7 +102,7 @@ export default async function MenuPage({
         })),
       })),
     }));
-  const isCustomerSession = await getIsCustomerSession(restaurant.businessId);
+  const customerResult = await getOrCreateCustomer(restaurant.businessId);
   const whatsappNumber = restaurant.business.socialLinks[0]?.url ?? null;
   const openStatus = getOpenStatus(restaurant.openingHours);
 
@@ -153,7 +135,7 @@ export default async function MenuPage({
       <MenuNavbar
         restaurantSlug={restaurant.slug}
         restaurantName={restaurant.name}
-        isCustomerSession={isCustomerSession}
+        customerName={customerResult?.customer.name ?? null}
         whatsappNumber={whatsappNumber}
       />
       <header className="bg-background pb-4">

@@ -77,15 +77,15 @@ function LoginForm() {
 
   return (
     <main className="flex min-h-screen">
-      <div className="relative flex w-full items-center justify-center bg-background px-6 py-12 md:w-[60%]">
+      <div className="relative flex w-full items-center justify-center bg-background px-6 pb-12 pt-24 md:w-[60%] md:py-12">
         <Link
           href="/"
-          className="absolute left-6 top-6 z-10 text-3xl font-bold text-primary md:left-8 md:top-8"
+          className="absolute left-6 top-6 z-10 text-2xl font-bold text-primary md:left-8 md:top-8 md:text-3xl"
         >
           PlatoRest
         </Link>
 
-        <div className="absolute right-6 top-6 z-10 flex items-center gap-4 md:right-8 md:top-8">
+        <div className="absolute right-6 top-6 z-10 flex items-center gap-3 md:right-8 md:top-8 md:gap-4">
           <a
             href="https://wa.me/5491171410652"
             target="_blank"
@@ -93,13 +93,13 @@ function LoginForm() {
             className="flex items-center gap-2"
           >
             <HiChatBubbleLeftRight className="h-5 w-5 text-text-primary" />
-            <span className="text-sm font-semibold text-text-primary">Soporte</span>
+            <span className="hidden text-sm font-semibold text-text-primary sm:inline">Soporte</span>
           </a>
-          <span className="h-6 w-px bg-border" />
-          <span className="text-sm text-text-secondary">¿No tenés cuenta?</span>
+          <span className="hidden h-6 w-px bg-border md:block" />
+          <span className="hidden text-sm text-text-secondary md:inline">¿No tenés cuenta?</span>
           <Link
             href="/register"
-            className="rounded-lg border-2 border-primary px-4 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white"
+            className="rounded-lg border-2 border-primary px-3 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary hover:text-white md:px-4"
           >
             Registrarse
           </Link>

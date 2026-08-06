@@ -48,3 +48,15 @@ export function clearCart() {
   window.localStorage.removeItem(KEY);
   window.dispatchEvent(new Event("cart-updated"));
 }
+
+export function removeFromCart(key: string) {
+  const current = getCart();
+  if (!current) return;
+  const items = current.items.filter((i) => (i.key ?? i.variantId) !== key);
+  if (items.length === 0) {
+    clearCart();
+    return;
+  }
+  window.localStorage.setItem(KEY, JSON.stringify({ ...current, items }));
+  window.dispatchEvent(new Event("cart-updated"));
+}

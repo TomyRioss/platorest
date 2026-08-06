@@ -67,8 +67,13 @@ export async function POST(req: Request) {
     if (!businessId) return NextResponse.json({ received: true });
 
     if (preapproval.status === "authorized") {
-      await prisma.business.update({
-        where: { id: businessId },
+      // Solo aplica si es la suscripción activa actual o la primera; evita que un
+      // webhook atrasado de una suscripción vieja pise una más nueva.
+      await prisma.business.updateMany({
+        where: {
+          id: businessId,
+          OR: [{ mpSubscriptionId: null }, { mpSubscriptionId: preapproval.id }],
+        },
         data: {
           plan: "pro",
           mpSubscriptionId: preapproval.id,

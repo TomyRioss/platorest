@@ -6,19 +6,15 @@ const FOOTER_SECTIONS = [
   {
     title: "Producto",
     links: [
-      { label: "Menú digital", href: "/funcionalidades/menu-digital" },
+      { label: "Demo gratis", href: "/register" },
       ...(process.env.NEXT_PUBLIC_SHOW_PRICING === "true"
         ? [{ label: "Precios", href: "/precios" }]
         : []),
-      { label: "Demo gratis", href: "/menu/demo" },
     ],
   },
   {
     title: "Soporte",
-    links: [
-      { label: "Contacto", href: `mailto:${SITE.email}` },
-      { label: "WhatsApp", href: SITE.whatsapp },
-    ],
+    links: [{ label: "WhatsApp", href: SITE.whatsapp }],
   },
 ];
 

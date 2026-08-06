@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { requireBusinessId } from "@/lib/tenant";
 import { PosClient } from "./pos-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function PosPage() {
-  // ponytail: single-tenant MVP, admin login isn't bound to a restaurant yet — use the first one
+  const businessId = await requireBusinessId();
   const restaurant = await prisma.restaurant.findFirst({
+    where: { businessId },
     orderBy: { createdAt: "asc" },
     include: {
       products: {

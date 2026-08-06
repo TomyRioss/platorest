@@ -174,7 +174,7 @@ export default function TopNavBar() {
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="md:hidden text-text-primary"
+          className="-m-2 justify-self-end p-2 text-xl leading-none text-text-primary md:hidden"
           aria-label="Abrir menú"
           aria-expanded={open}
         >

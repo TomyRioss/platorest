@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { requireBusinessId } from "@/lib/tenant";
 import { InventoryClient } from "./inventory-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function InventarioPage() {
-  // ponytail: single-tenant MVP, same simplification as /dashboard/pos
+  const businessId = await requireBusinessId();
   const restaurant = await prisma.restaurant.findFirst({
+    where: { businessId },
     orderBy: { createdAt: "asc" },
     include: {
       products: {

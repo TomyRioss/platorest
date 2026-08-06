@@ -3,13 +3,10 @@ import { notFound } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SITE } from "@/lib/seo";
 import { PromoCountdown } from "@/components/promo-countdown";
 
 const INCLUDED = [
-  "Smart POS ilimitado",
-  "Inventario en tiempo real",
-  "Menú QR digital",
+  "Menú Digital",
   "Soporte 24/7 feriados y fines de semana",
   "Soporte Presencial CABA y GBA",
   "Todas las funcionalidades actuales y futuras",
@@ -33,11 +30,11 @@ export default function PreciosPage() {
           </p>
         </div>
 
-        <Card className="relative overflow-hidden rounded-3xl border-2 border-primary p-16 shadow-xl md:p-20">
+        <Card className="relative overflow-hidden rounded-3xl border-2 border-primary p-6 shadow-xl sm:p-10 md:p-16 lg:p-20">
           <CardContent className="grid grid-cols-1 items-center gap-12 p-0 lg:grid-cols-2">
             <div>
               <h2 className="text-4xl font-bold text-primary sm:text-5xl">
-                Plan fundadores
+                Plan Promocional
               </h2>
               <ul className="mt-8 space-y-4 text-lg">
                 {INCLUDED.map((item) => (
@@ -48,26 +45,31 @@ export default function PreciosPage() {
                 ))}
               </ul>
               <p className="mt-8 text-base text-text-secondary">
-                Tiempo limitado, solo para nuestros primeros 100 clientes.
+                Salida de nuestra primer versión privada
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-surface p-10 text-center lg:text-right">
+            <div className="rounded-2xl border border-border bg-surface p-6 text-center md:p-10 lg:text-right">
               <p className="text-sm font-semibold uppercase tracking-widest text-text-secondary">
                 Suscripción mensual
               </p>
-              <p className="mt-3 text-6xl font-bold text-primary">
-                $25.000<span className="text-2xl font-medium text-text-secondary">/mes</span>
+              <p className="mt-3 flex items-baseline justify-center gap-3 lg:justify-end">
+                <span className="text-2xl font-medium text-text-secondary line-through">
+                  $45.000
+                </span>
+                <span className="text-4xl font-bold text-primary sm:text-5xl md:text-6xl">
+                  $19.900<span className="text-xl font-medium text-text-secondary md:text-2xl">/mes</span>
+                </span>
               </p>
               <p className="mt-3 text-base font-semibold text-primary">
                 Un plan, todo incluido.
               </p>
               <PromoCountdown className="mt-6" />
               <Link
-                href={`mailto:${SITE.email}`}
+                href="/register"
                 className={cn(buttonVariants({ size: "lg" }), "mt-8 h-auto w-full rounded-lg px-6 py-4 text-lg")}
               >
-                Contactanos
+                Demo gratis
               </Link>
             </div>
           </CardContent>

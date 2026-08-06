@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { customerSignIn } from "@/lib/customer-session-client";
 import { HiEye, HiEyeSlash, HiArrowLeft } from "react-icons/hi2";
 
 export default function CustomerRegisterPage({
@@ -39,7 +39,7 @@ export default function CustomerRegisterPage({
         throw new Error(data?.error ?? "No se pudo crear la cuenta.");
       }
 
-      const signInRes = await signIn("credentials", { email, password, redirect: false });
+      const signInRes = await customerSignIn(email, password);
       if (signInRes?.error) throw new Error("No pudimos iniciar sesión. Probá ingresar manualmente.");
 
       router.push(`/menu/${restaurantSlug}`);

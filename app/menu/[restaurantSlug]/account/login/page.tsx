@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { customerSignIn } from "@/lib/customer-session-client";
 import { HiEye, HiEyeSlash, HiArrowLeft } from "react-icons/hi2";
 
 export default function CustomerLoginPage({
@@ -24,7 +24,7 @@ export default function CustomerLoginPage({
     setLoading(true);
     setError(null);
     try {
-      const res = await signIn("credentials", { email, password, redirect: false });
+      const res = await customerSignIn(email, password);
       if (res?.error) {
         setError("Email o contraseña incorrectos.");
         return;

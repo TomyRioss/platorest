@@ -35,10 +35,10 @@ export function PromoCountdown({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`inline-flex w-fit items-center gap-1 rounded-full border border-border px-3 py-1 text-xs font-medium text-text-secondary ${className}`}
+      className={`inline-flex w-fit items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg ring-4 ring-primary/30 ${className}`}
     >
-      Promo termina en{" "}
-      <span className="tabular-nums">
+      <span className="uppercase tracking-wide">Promo termina en</span>
+      <span className="tabular-nums text-base">
         {parts.map(([value, unit]) => `${String(value).padStart(2, "0")}${unit} `).join("")}
       </span>
     </div>

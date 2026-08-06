@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatMoney } from "@/lib/utils";
 import { createPosOrder } from "./actions";
 
 type Product = { variantId: string; name: string; price: number };
@@ -79,7 +80,7 @@ export function PosClient({
             Comprobante #{receipt.orderId.slice(-8)}
           </p>
           <p className="mt-2 text-lg font-semibold text-text-primary">
-            Total: ${receipt.total}
+            Total: ${formatMoney(receipt.total)}
           </p>
           <button
             onClick={() => setReceipt(null)}
@@ -108,7 +109,7 @@ export function PosClient({
                     {p.name}
                   </span>
                   <span className="text-sm text-text-secondary">
-                    ${p.price}
+                    ${formatMoney(p.price)}
                   </span>
                 </button>
               </li>
@@ -131,7 +132,7 @@ export function PosClient({
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-text-secondary">
-                    ${item.price * item.qty}
+                    ${formatMoney(item.price * item.qty)}
                   </span>
                   <button
                     onClick={() => removeItem(item.variantId)}
@@ -145,7 +146,7 @@ export function PosClient({
           </ul>
 
           <p className="mb-4 text-right font-semibold text-text-primary">
-            Total: ${total}
+            Total: ${formatMoney(total)}
           </p>
 
           <input
@@ -153,11 +154,11 @@ export function PosClient({
             placeholder="Teléfono cliente (opcional, para fidelización)"
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
-            className="mb-4 w-full rounded border border-border px-3 py-2 outline-none focus:border-primary"
+            className="mb-4 w-full rounded border border-border px-3 py-2.5 outline-none focus:border-primary"
           />
 
           <div className="mb-4 flex gap-4">
-            <label className="flex items-center gap-2 text-text-primary">
+            <label className="flex items-center gap-2 py-1.5 text-text-primary">
               <input
                 type="radio"
                 checked={paymentMethod === "CASH"}
@@ -165,7 +166,7 @@ export function PosClient({
               />
               Efectivo
             </label>
-            <label className="flex items-center gap-2 text-text-primary">
+            <label className="flex items-center gap-2 py-1.5 text-text-primary">
               <input
                 type="radio"
                 checked={paymentMethod === "MERCADOPAGO"}
@@ -184,9 +185,9 @@ export function PosClient({
           <button
             onClick={handleCharge}
             disabled={loading || items.length === 0}
-            className="w-full rounded bg-primary px-4 py-2 font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+            className="w-full rounded bg-primary px-4 py-3 font-medium text-white hover:bg-primary-hover disabled:opacity-50"
           >
-            {loading ? "Cobrando..." : `Cobrar $${total}`}
+            {loading ? "Cobrando..." : `Cobrar $${formatMoney(total)}`}
           </button>
         </section>
       </div>

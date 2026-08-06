@@ -53,7 +53,7 @@ export default async function PricingPage() {
         <CardContent className="p-0">
           <h2 className="text-xl font-bold text-primary">Plan Promocional</h2>
           <p className="mt-1 text-6xl font-extrabold tracking-tight text-primary">
-            $25.000<span className="text-lg font-medium text-text-secondary">/mes</span>
+            $19.900<span className="text-lg font-medium text-text-secondary">/mes</span>
           </p>
           <PromoCountdown className="mt-4" />
 
@@ -77,13 +77,27 @@ export default async function PricingPage() {
               Plan activo
             </Button>
           ) : (
-            <form action={subscribeToPro}>
+            <form action={subscribeToPro} className="mt-8 space-y-2">
+              <label htmlFor="mpEmail" className="text-sm font-medium text-text-primary">
+                Email de tu cuenta de MercadoPago
+              </label>
+              <input
+                id="mpEmail"
+                name="mpEmail"
+                type="email"
+                required
+                defaultValue={session?.user?.email ?? ""}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-text-secondary">
+                Tiene que coincidir con la cuenta con la que vas a pagar en MercadoPago.
+              </p>
               <Button
                 type="submit"
-                className="mt-8 h-16 w-full gap-2 rounded-xl bg-[#009ee3] text-lg font-bold text-white shadow-lg hover:bg-[#008ecb]"
+                className="h-16 w-full gap-2 rounded-xl bg-[#009ee3] text-lg font-bold text-white shadow-lg hover:bg-[#008ecb]"
                 size="lg"
               >
-                <SiMercadopago className="h-9 w-9" />
+                <SiMercadopago className="size-10" />
                 Suscribirme con MercadoPago
               </Button>
             </form>
