@@ -278,6 +278,7 @@ model Product {
   imageUrl     String?
   gallery      String[]   @default([])
   active       Boolean    @default(true)
+  takeAway     Boolean    @default(true)
   variants     ProductVariant[]
   modifierGroups ProductModifierGroup[]
 }

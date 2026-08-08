@@ -67,3 +67,55 @@ export async function updateOrderStatus(
   revalidatePath("/dashboard/pedidos");
   return { ok: true };
 }
+
+export async function updateOrderItems(
+  orderId: string,
+  items: { variantId: string; quantity: number }[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) return { ok: false, error: "Pedido no encontrado." };
+  if (order.status !== "PENDING") {
+    return { ok: false, error: "Solo se puede editar un pedido pendiente." };
+  }
+  if (items.length === 0 || items.some((i) => i.quantity < 1)) {
+    return { ok: false, error: "El pedido debe tener al menos un producto con cantidad válida." };
+  }
+
+  try {
+    await assertOwnsRestaurant(order.restaurantId);
+
+    const variants = await prisma.productVariant.findMany({
+      where: {
+        id: { in: items.map((i) => i.variantId) },
+        product: { restaurantId: order.restaurantId },
+      },
+    });
+    if (variants.length !== new Set(items.map((i) => i.variantId)).size) {
+      return { ok: false, error: "Producto no encontrado." };
+    }
+
+    const total = items.reduce((sum, i) => {
+      const variant = variants.find((v) => v.id === i.variantId)!;
+      return sum + Number(variant.price) * i.quantity;
+    }, 0);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.orderItem.deleteMany({ where: { orderId } });
+      await tx.orderItem.createMany({
+        data: items.map((i) => ({
+          orderId,
+          variantId: i.variantId,
+          quantity: i.quantity,
+          unitPrice: variants.find((v) => v.id === i.variantId)!.price,
+        })),
+      });
+      await tx.order.update({ where: { id: orderId }, data: { total } });
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error al actualizar el pedido.";
+    return { ok: false, error: message };
+  }
+
+  revalidatePath("/dashboard/pedidos");
+  return { ok: true };
+}

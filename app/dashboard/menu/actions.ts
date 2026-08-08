@@ -374,6 +374,7 @@ export async function duplicateProduct(productId: string): Promise<ActionResult>
         description: product.description,
         imageUrl: product.imageUrl,
         active: product.active,
+        takeAway: product.takeAway,
         variants: {
           create: product.variants.map((v) => ({
             name: v.name,
@@ -420,6 +421,22 @@ export async function toggleProductActive(
     if (!restaurantId) return { ok: false, error: "Producto no encontrado." };
     await assertOwnsRestaurant(restaurantId);
     await prisma.product.update({ where: { id: productId }, data: { active } });
+  } catch {
+    return { ok: false, error: "Error al actualizar producto." };
+  }
+  revalidatePath("/dashboard/menu");
+  return { ok: true };
+}
+
+export async function toggleProductTakeAway(
+  productId: string,
+  takeAway: boolean,
+): Promise<ActionResult> {
+  try {
+    const restaurantId = await restaurantIdOfProduct(productId);
+    if (!restaurantId) return { ok: false, error: "Producto no encontrado." };
+    await assertOwnsRestaurant(restaurantId);
+    await prisma.product.update({ where: { id: productId }, data: { takeAway } });
   } catch {
     return { ok: false, error: "Error al actualizar producto." };
   }

@@ -64,6 +64,7 @@ export default async function MenuPage() {
           name: p.name,
           description: p.description,
           active: p.active,
+          takeAway: p.takeAway,
           price: Number(p.variants.find((v) => v.isDefault)?.price ?? p.variants[0]?.price ?? 0),
           imageUrl: p.imageUrl,
           variants: p.variants.map((v) => ({

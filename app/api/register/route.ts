@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
@@ -131,6 +132,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ businessId: business.id }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/register]", err);
-    return NextResponse.json({ error: "No se pudo crear la cuenta." }, { status: 500 });
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const targetFromMeta = (err.meta?.target as string[] | undefined)?.join(",") ?? "";
+      const target = targetFromMeta || err.message;
+      if (target.includes("phone")) {
+        return NextResponse.json({ error: "Ese número de WhatsApp ya está registrado en otra cuenta." }, { status: 409 });
+      }
+      if (target.includes("email")) {
+        return NextResponse.json({ error: "Ya existe una cuenta con ese email." }, { status: 409 });
+      }
+    }
+    return NextResponse.json({ error: "No se pudo crear la cuenta. Intentá de nuevo." }, { status: 500 });
   }
 }

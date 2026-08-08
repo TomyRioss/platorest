@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { HiCheckCircle, HiChatBubbleLeftRight, HiEye, HiEyeSlash } from "react-icons/hi2";
+import { HiCheckCircle, HiChatBubbleLeftRight, HiEye, HiEyeSlash, HiExclamationTriangle } from "react-icons/hi2";
 import { FcGoogle } from "react-icons/fc";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -291,9 +291,13 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <p className="mt-4 text-sm text-danger" role="alert">
-              {error}
-            </p>
+            <div
+              role="alert"
+              className="mt-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-sm font-medium text-danger"
+            >
+              <HiExclamationTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
           )}
 
           <button

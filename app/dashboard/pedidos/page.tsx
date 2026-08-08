@@ -18,14 +18,21 @@ export default async function PedidosPage() {
     );
   }
 
-  const orders = await prisma.order.findMany({
-    where: { restaurantId: restaurant.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      customer: true,
-      items: { include: { variant: { include: { product: true } } } },
-    },
-  });
+  const [orders, products] = await Promise.all([
+    prisma.order.findMany({
+      where: { restaurantId: restaurant.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        customer: true,
+        items: { include: { variant: { include: { product: true } } } },
+      },
+    }),
+    prisma.product.findMany({
+      where: { restaurantId: restaurant.id, active: true },
+      include: { variants: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <PedidosClient
@@ -38,10 +45,20 @@ export default async function PedidosPage() {
         createdAt: o.createdAt.toISOString(),
         customerName: o.customer?.name ?? null,
         items: o.items.map((i) => ({
+          variantId: i.variantId,
           name: i.variant.product.name,
+          variantName: i.variant.name,
           quantity: i.quantity,
         })),
       }))}
+      catalog={products.flatMap((p) =>
+        p.variants.map((v) => ({
+          variantId: v.id,
+          productName: p.name,
+          variantName: v.name,
+          price: Number(v.price),
+        })),
+      )}
     />
   );
 }

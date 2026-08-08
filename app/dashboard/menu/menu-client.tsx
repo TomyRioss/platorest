@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { FaLink, FaFacebook, FaWhatsapp, FaArrowUpRightFromSquare, FaShareNodes } from "react-icons/fa6";
-import { Menu, ChevronDown, ChevronUp, GripVertical, MoreVertical, Plus, Settings2, FoldVertical, UnfoldVertical, Eye, EyeOff, Pencil, Trash2, Copy, FolderInput, Link as LinkIcon } from "lucide-react";
+import { Menu, ChevronDown, ChevronUp, GripVertical, MoreVertical, Plus, Settings2, FoldVertical, UnfoldVertical, Eye, EyeOff, Pencil, Trash2, Copy, FolderInput, Link as LinkIcon, ShoppingBag } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -39,6 +39,7 @@ import {
   reorderCategories,
   saveProduct,
   toggleProductActive,
+  toggleProductTakeAway,
   deleteProduct,
   duplicateProduct,
   moveProductCategory,
@@ -55,7 +56,7 @@ import { ProductDrawer, type DrawerState } from "./product-drawer";
 import type { ModifierGroupData } from "./modifier-groups-editor";
 
 type Variant = { id: string; name: string; price: number; costPrice: number | null; packagingPrice: number | null; sku: string | null; isDefault: boolean };
-type Product = { id: string; name: string; description: string | null; active: boolean; price: number; imageUrl: string | null; variants: Variant[]; modifierGroups: ModifierGroupData[] };
+type Product = { id: string; name: string; description: string | null; active: boolean; takeAway: boolean; price: number; imageUrl: string | null; variants: Variant[]; modifierGroups: ModifierGroupData[] };
 type Category = { id: string; name: string; isFeatured: boolean; products: Product[] };
 
 export function MenuClient({
@@ -209,6 +210,17 @@ export function MenuClient({
         prev.map((c) => ({
           ...c,
           products: c.products.map((p) => (p.id === productId ? { ...p, active } : p)),
+        })),
+      );
+    });
+  }
+
+  function handleToggleTakeAway(productId: string, takeAway: boolean) {
+    run(() => toggleProductTakeAway(productId, takeAway), () => {
+      setCategories((prev) =>
+        prev.map((c) => ({
+          ...c,
+          products: c.products.map((p) => (p.id === productId ? { ...p, takeAway } : p)),
         })),
       );
     });
@@ -533,7 +545,7 @@ export function MenuClient({
                           setDrawerState({ mode: "edit", product, categoryId: category.id });
                         }
                       }}
-                      className="flex min-w-0 items-center gap-3 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
                     >
                       <ProductImageUploader
                         image={product.imageUrl}
@@ -551,6 +563,14 @@ export function MenuClient({
                     <Separator orientation="vertical" className="h-4 !w-px !self-center" />
                     <div className="flex shrink-0 items-center gap-3">
                       <p className="text-sm font-medium text-text-primary">${product.price.toLocaleString("es-AR")}</p>
+                      <button
+                        onClick={() => handleToggleTakeAway(product.id, !product.takeAway)}
+                        disabled={isPending}
+                        className={product.takeAway ? "text-primary" : "text-text-secondary"}
+                        title={product.takeAway ? "Disponible para take away" : "No disponible para take away"}
+                      >
+                        <ShoppingBag className="h-5 w-5" />
+                      </button>
                       <button
                         onClick={() => handleToggleActive(product.id, !product.active)}
                         disabled={isPending}
